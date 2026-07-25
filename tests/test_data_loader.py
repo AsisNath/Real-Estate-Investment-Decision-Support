@@ -95,6 +95,60 @@ def test_policy_context_national_fallback():
     assert context["restriction_flags"][0]["jurisdiction"] == "Unknown jurisdiction"
 
 
+def test_location_check_passes_for_matching_address():
+    check = data_loader.check_location_consistency("St. Charles", "MO", "63301")
+
+    assert check["status"] == "ok"
+    assert check["warnings"] == []
+    assert check["expected_county"] == "St. Charles County"
+
+
+def test_location_check_accepts_saint_spelling():
+    check = data_loader.check_location_consistency("Saint Charles", "MO", "63301")
+
+    assert check["status"] == "ok"
+
+
+def test_location_check_flags_wrong_city():
+    check = data_loader.check_location_consistency("Saint Louis", "MO", "63301")
+
+    assert check["status"] == "warning"
+    assert "63301 is St. Charles" in check["warnings"][0]
+
+
+def test_location_check_flags_wrong_state():
+    check = data_loader.check_location_consistency("Austin", "TX", "63301")
+
+    assert check["status"] == "warning"
+    assert "belongs to MO" in check["warnings"][0]
+
+
+def test_location_check_flags_malformed_zip():
+    check = data_loader.check_location_consistency("Austin", "TX", "787")
+
+    assert check["status"] == "warning"
+    assert "not a five-digit" in check["warnings"][0]
+
+
+def test_location_check_reports_unknown_zip_as_unverified():
+    check = data_loader.check_location_consistency("Bloomington", "IN", "47401")
+
+    # The prefix confirms Indiana, but the exact city cannot be checked.
+    assert check["status"] == "unverified"
+    assert check["warnings"] == []
+    assert "not in the built-in location directory" in check["unverified"][0]
+
+
+def test_state_for_zip_prefix_ranges():
+    assert data_loader.state_for_zip("63301") == "MO"
+    assert data_loader.state_for_zip("78704") == "TX"
+    assert data_loader.state_for_zip("46202") == "IN"
+    assert data_loader.state_for_zip("33602") == "FL"
+    assert data_loader.state_for_zip("99801") == "AK"
+    # 429 is not an assigned prefix, so no state is claimed and no warning fires.
+    assert data_loader.state_for_zip("42900") is None
+
+
 def _write_note(directory, name, text):
     directory.mkdir(parents=True, exist_ok=True)
     (directory / name).write_text(text, encoding="utf-8")

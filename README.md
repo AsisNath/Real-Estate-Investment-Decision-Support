@@ -15,7 +15,7 @@ This local MVP does not use paid APIs or live real estate data. The sample marke
 - `app/finance.py`: deterministic financial model, return metrics, projection metrics, and recommendation rules.
 - `app/data_loader.py`: local JSON data loading and fallback logic.
 - `app/analysis.py`: combines finance, market data, policy data, risks, opportunities, and final report.
-- `data/`: sample market, policy, and property records.
+- `data/`: sample market, policy, and property records, plus `zip_directory.json` for city/state/ZIP consistency checks.
 - `knowledge_bank/`: local folder for HOA rules, city policy notes, rental law notes, lease restrictions, or other manual due-diligence files.
 - `templates/index.html`: dashboard page.
 - `static/app.js`: form handling and report rendering.
@@ -29,7 +29,7 @@ This local MVP does not use paid APIs or live real estate data. The sample marke
 
 1. The browser form collects property and investment assumptions.
 2. The frontend sends a JSON request to `POST /api/analyze`.
-3. FastAPI validates the request with Pydantic.
+3. FastAPI validates the request with Pydantic, then `check_location_consistency` verifies that the city, state, and ZIP describe the same place using `data/zip_directory.json`. A mismatch produces a warning banner at the top of the report, a high risk entry, and counts against a confident recommendation.
 4. `finance.py` calculates loan, LTV, operating expenses, NOI, cash flow, break-even rent, DSCR, going-in cap rate, cash-on-cash return, 5-year and 10-year IRR, equity multiple, exit cap rate, sales costs, and projected sale proceeds.
 5. `data_loader.py` loads market data by ZIP code with state/national fallback, and builds a layered policy context: city/county (ZIP-level), state, and national records are merged so the report covers every jurisdiction level that matches, and each restriction flag and source link is tagged with its jurisdiction (city/county, state, HOA/private). City-specific example links inside a state record are only shown when the analyzed city matches, so a Saint Charles property never displays St. Louis rules.
 6. `data_loader.py` also checks `knowledge_bank` for local `.md` or `.txt` policy files matching the state, ZIP, city, or specific property.

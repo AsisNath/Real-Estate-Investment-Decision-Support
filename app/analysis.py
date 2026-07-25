@@ -125,9 +125,12 @@ def build_report(
     market_context: dict[str, Any],
     policy_context: dict[str, Any],
     knowledge_bank_context: dict[str, Any],
+    location_check: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     assumptions = request.dict()
     metrics = analyze_investment(assumptions)
+    location_check = location_check or {"status": "unverified", "warnings": [], "unverified": []}
+    location_mismatch = location_check.get("status") == "warning"
 
     missing_flags = []
     missing_flags.extend(market_context.get("missing_data_flags", []))
@@ -136,10 +139,21 @@ def build_report(
     recommendation = recommendation_from_metrics(
         metrics,
         policy_context.get("risk_level", "medium"),
-        len(missing_flags),
+        # A location mismatch means the market and policy sections may describe
+        # the wrong place, so it counts against a confident recommendation.
+        len(missing_flags) + (1 if location_mismatch else 0),
     )
 
     risks = build_risks(metrics, market_context, policy_context, missing_flags)
+    if location_mismatch:
+        risks.insert(
+            0,
+            {
+                "level": "high",
+                "title": "Address Fields Do Not Match",
+                "detail": " ".join(location_check.get("warnings", [])),
+            },
+        )
     opportunities = build_opportunities(metrics, market_context)
     overall_risk = _risk_label(
         max(
@@ -159,6 +173,7 @@ def build_report(
         "market": market_context,
         "policy": policy_context,
         "knowledge_bank": knowledge_bank_context,
+        "location_check": location_check,
         "financials": metrics,
         "risks": risks,
         "opportunities": opportunities,

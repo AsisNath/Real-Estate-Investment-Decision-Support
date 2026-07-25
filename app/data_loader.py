@@ -152,6 +152,90 @@ def load_policy_context(zip_code: str, state: str, city: str = "") -> dict[str, 
     return result
 
 
+def state_for_zip(zip_code: str) -> str | None:
+    """State that owns this ZIP's three-digit prefix, or None if unlisted."""
+    digits = re.sub(r"[^0-9]", "", zip_code)[:5]
+    if len(digits) < 3:
+        return None
+
+    prefix = digits[:3]
+    for start, end, state in load_json("zip_directory.json")["state_prefixes"]:
+        if start <= prefix <= end:
+            return state
+    return None
+
+
+def check_location_consistency(city: str, state: str, zip_code: str) -> dict[str, Any]:
+    """Warn when the city, state, and ZIP the user typed do not describe one place.
+
+    A mismatch means the market and policy sections could describe the wrong
+    location entirely, so it is surfaced before the investor reads the numbers.
+    Checks that cannot be made (unlisted ZIP or prefix) are reported as
+    unverified rather than treated as a pass.
+    """
+    directory = load_json("zip_directory.json")
+    state = normalize_state(state)
+    city = city.strip()
+    digits = re.sub(r"[^0-9]", "", zip_code)[:5]
+
+    warnings: list[str] = []
+    unverified: list[str] = []
+    place = directory["zip_places"].get(digits)
+    expected_state = state_for_zip(digits)
+
+    if len(digits) != 5:
+        warnings.append(
+            f"\"{zip_code}\" is not a five-digit U.S. ZIP code, so the location could not be checked."
+        )
+        return {
+            "status": "warning",
+            "warnings": warnings,
+            "unverified": unverified,
+            "expected_city": None,
+            "expected_county": None,
+            "expected_state": None,
+        }
+
+    if expected_state and expected_state != state:
+        warnings.append(
+            f"ZIP {digits} belongs to {expected_state}, but the state entered is {state}. "
+            "Confirm the address before using this report."
+        )
+    elif not expected_state:
+        unverified.append(
+            f"ZIP {digits} is outside the built-in ZIP prefix ranges, so the state could not be confirmed."
+        )
+
+    if place:
+        if _normalize_city(place["city"]) != _normalize_city(city):
+            warnings.append(
+                f"ZIP {digits} is {place['city']}, {place['state']} ({place['county']}), "
+                f"but the city entered is \"{city}\". Local rules differ by city and county, "
+                "so confirm which one applies to this address."
+            )
+    else:
+        unverified.append(
+            f"ZIP {digits} is not in the built-in location directory, so the city could not be "
+            "confirmed. Verify the city and county for this address."
+        )
+
+    if warnings:
+        status = "warning"
+    elif unverified:
+        status = "unverified"
+    else:
+        status = "ok"
+
+    return {
+        "status": status,
+        "warnings": warnings,
+        "unverified": unverified,
+        "expected_city": place["city"] if place else None,
+        "expected_county": place["county"] if place else None,
+        "expected_state": expected_state,
+    }
+
+
 def load_sample_properties() -> list[dict[str, Any]]:
     return load_json("sample_properties.json")["properties"]
 

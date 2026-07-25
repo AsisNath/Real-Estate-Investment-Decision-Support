@@ -206,6 +206,38 @@ function knowledgeBankPanel(knowledgeBank) {
   `;
 }
 
+function locationCheckPanel(check) {
+  if (!check) return "";
+
+  const warnings = check.warnings || [];
+  const unverified = check.unverified || [];
+  if (warnings.length === 0 && unverified.length === 0) return "";
+
+  const isWarning = check.status === "warning";
+  const items = (isWarning ? warnings : unverified)
+    .map((message) => `<li>${escapeHtml(message)}</li>`)
+    .join("");
+  const expected =
+    isWarning && check.expected_city
+      ? `<p class="muted">ZIP directory match: ${escapeHtml(check.expected_city)}, ${escapeHtml(
+          check.expected_state || ""
+        )} (${escapeHtml(check.expected_county || "")}).</p>`
+      : "";
+
+  return `
+    <section class="location-check ${isWarning ? "mismatch" : "unverified"}">
+      <h3>${isWarning ? "Check the address you entered" : "Address partly unverified"}</h3>
+      <p>${
+        isWarning
+          ? "The city, state, and ZIP code do not describe the same place. The market and policy sections below may be for a different location."
+          : "Some parts of this address could not be confirmed against the built-in location directory."
+      }</p>
+      <ul>${items}</ul>
+      ${expected}
+    </section>
+  `;
+}
+
 function projectionTable(report) {
   const rows = [5, 10]
     .map((year) => {
@@ -251,6 +283,8 @@ function renderReport(report) {
   const recommendationClass = report.recommendation.status.toLowerCase().replaceAll(" ", "-");
 
   reportEl.innerHTML = `
+    ${locationCheckPanel(report.location_check)}
+
     <div class="recommendation ${recommendationClass}">
       <div>
         <p class="eyebrow">Final recommendation</p>

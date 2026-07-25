@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.analysis import build_report
 from app.data_loader import (
+    check_location_consistency,
     load_knowledge_bank_context,
     load_market_context,
     load_policy_context,
@@ -54,4 +55,15 @@ def analyze_property(payload: AnalysisRequest):
         payload.state,
         payload.zip_code,
     )
-    return build_report(payload, market_context, policy_context, knowledge_bank_context)
+    location_check = check_location_consistency(
+        payload.city,
+        payload.state,
+        payload.zip_code,
+    )
+    return build_report(
+        payload,
+        market_context,
+        policy_context,
+        knowledge_bank_context,
+        location_check,
+    )

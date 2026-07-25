@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -15,7 +15,13 @@ from app.data_loader import (
     load_policy_context,
     load_sample_properties,
 )
-from app.schemas import AnalysisRequest, HealthResponse, LocationCheckRequest
+from app.knowledge_bank import build_folder, create_note, read_note, scan_knowledge_bank
+from app.schemas import (
+    AnalysisRequest,
+    HealthResponse,
+    LocationCheckRequest,
+    NewNoteRequest,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -50,6 +56,46 @@ def index(request: Request):
         "index.html",
         {"request": request, "asset_version": asset_version()},
     )
+
+
+@app.get("/knowledge-bank", response_class=HTMLResponse)
+def knowledge_bank_page(request: Request):
+    return templates.TemplateResponse(
+        "knowledge_bank.html",
+        {"request": request, "asset_version": asset_version()},
+    )
+
+
+@app.get("/api/knowledge-bank")
+def knowledge_bank_inventory():
+    """Every note in the folder, including ones the user added by hand."""
+    return scan_knowledge_bank()
+
+
+@app.get("/api/knowledge-bank/note")
+def knowledge_bank_note(path: str):
+    try:
+        return read_note(path)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="That note was not found.")
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+
+
+@app.post("/api/knowledge-bank/notes", status_code=201)
+def add_knowledge_bank_note(payload: NewNoteRequest):
+    """Save a policy note the user wrote or pasted into the app."""
+    try:
+        folder = payload.folder.strip() or build_folder(
+            payload.scope, payload.value, payload.state
+        )
+        return create_note(folder, payload.filename, payload.content, payload.overwrite)
+    except FileExistsError as error:
+        raise HTTPException(status_code=409, detail=str(error))
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except OSError as error:
+        raise HTTPException(status_code=400, detail=f"Could not write the note: {error}")
 
 
 @app.get("/api/health", response_model=HealthResponse)

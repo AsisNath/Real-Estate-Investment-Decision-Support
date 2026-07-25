@@ -562,6 +562,277 @@ select:focus {
   color: #39433d;
 }
 
+.conflict-block {
+  border: 1px solid #eaa9a2;
+  border-left: 5px solid var(--red);
+  background: #fff8f7;
+}
+
+.diligence-list {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.5;
+}
+
+.diligence-list li {
+  margin-bottom: 8px;
+}
+
+.diligence-list code {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.stale-note {
+  color: #8a6100;
+  font-weight: 700;
+}
+
+/* ---------------------------------------------- knowledge bank page */
+
+.header-link {
+  align-self: center;
+  color: var(--blue);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.header-link:hover {
+  text-decoration: underline;
+}
+
+.kb-workspace {
+  display: grid;
+  gap: 18px;
+  padding: 20px 26px 40px;
+}
+
+.kb-summary {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.kb-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.kb-stats article {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--blue-soft);
+}
+
+.kb-stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.kb-stats strong {
+  font-size: 24px;
+}
+
+.kb-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.kb-list-panel,
+.kb-add-panel,
+.kb-viewer {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.kb-list {
+  display: grid;
+  gap: 12px;
+}
+
+.kb-note {
+  padding: 13px 15px;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--blue);
+  border-radius: 10px;
+  background: #fbfdff;
+}
+
+.kb-note.stale {
+  border-left-color: var(--amber);
+  background: #fffdf5;
+}
+
+.kb-note-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kb-note-head h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.kb-note-scope {
+  margin: 4px 0 0;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.kb-note-meta,
+.kb-note-path {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.kb-stale-warning {
+  margin: 6px 0 0;
+  color: #8a6100;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.kb-note button {
+  margin-top: 10px;
+}
+
+.secondary-action {
+  padding: 7px 13px;
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--blue);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary-action:hover {
+  background: var(--blue-soft);
+}
+
+.kb-add-panel form {
+  display: grid;
+  gap: 12px;
+}
+
+.kb-add-panel textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #b8cbdc;
+  border-radius: 8px;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.kb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.inline-check {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.inline-check input {
+  width: auto;
+}
+
+.kb-result {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #eef7ee;
+  border: 1px solid #b6d7b6;
+  font-size: 13px;
+}
+
+.kb-result.error {
+  background: #fff8f7;
+  border-color: #eaa9a2;
+}
+
+.kb-help {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.kb-viewer {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.note-body {
+  overflow-x: auto;
+  line-height: 1.55;
+}
+
+.note-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+
+.note-body th,
+.note-body td {
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  text-align: left;
+  font-size: 13px;
+}
+
+.note-body th {
+  background: var(--blue-soft);
+}
+
+.note-body h1 {
+  font-size: 20px;
+}
+
+.note-body h2 {
+  font-size: 16px;
+  margin-top: 18px;
+}
+
+.note-plain {
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+
+.kb-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--blue);
+  font-weight: 700;
+}
+
+@media (max-width: 1080px) {
+  .kb-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
 .doc-meta {
   margin: 6px 0 0;
   color: var(--muted);

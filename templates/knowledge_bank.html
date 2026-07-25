@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Knowledge Bank - NorthStar Property Investment Consulting</title>
+    <link rel="stylesheet" href="/static/styles.css?v={{ asset_version }}" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Local policy and restriction library</p>
+        <h1>Knowledge Bank</h1>
+      </div>
+      <a class="header-link" href="/">&larr; Back to analysis</a>
+    </header>
+
+    <main class="kb-workspace">
+      <section class="kb-summary" id="kbSummary" aria-live="polite">
+        <p class="muted">Loading the knowledge bank...</p>
+      </section>
+
+      <div class="kb-columns">
+        <section class="kb-list-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Notes in the folder</h2>
+              <p class="panel-note">Every <code>.md</code> or <code>.txt</code> note found, whoever wrote it.</p>
+            </div>
+            <input id="kbFilter" type="search" placeholder="Filter by place or folder" aria-label="Filter notes" />
+          </div>
+          <div id="kbList" class="kb-list"></div>
+        </section>
+
+        <section class="kb-add-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Add a local policy note</h2>
+              <p class="panel-note">Paste an HOA rule, city ordinance, lease restriction, or lender condition.</p>
+            </div>
+          </div>
+
+          <form id="addNoteForm">
+            <label>
+              <span>Where does it apply?</span>
+              <select name="scope" id="scopeSelect">
+                <option value="researched">A specific ZIP, researched-note style (tx-78704)</option>
+                <option value="zip">A ZIP code (zips/78704)</option>
+                <option value="state">A state (states/TX)</option>
+                <option value="city">A city (cities/austin_tx)</option>
+                <option value="property">One property (properties/address)</option>
+                <option value="global">Every property (global)</option>
+                <option value="custom">Custom folder</option>
+              </select>
+            </label>
+
+            <div class="field-grid two">
+              <label id="valueField">
+                <span id="valueLabel">ZIP code</span>
+                <input name="value" id="valueInput" placeholder="78704" />
+              </label>
+              <label id="stateField">
+                <span>State</span>
+                <input name="state" id="stateInput" maxlength="2" placeholder="TX" />
+              </label>
+            </div>
+
+            <label>
+              <span>File name</span>
+              <input name="filename" id="filenameInput" value="policy-notes.md" />
+            </label>
+
+            <label>
+              <span>Note content (Markdown)</span>
+              <textarea name="content" id="contentInput" rows="12" placeholder="# HOA rental restrictions - Maple Ridge&#10;&#10;- Rentals capped at 20% of units. - HOA declaration, recorded 2019 - as of 2026-07-25"></textarea>
+            </label>
+
+            <div class="kb-actions">
+              <button type="button" class="secondary-action" id="templateButton">Insert template</button>
+              <label class="inline-check">
+                <input type="checkbox" name="overwrite" id="overwriteInput" />
+                <span>Overwrite if the file exists</span>
+              </label>
+              <button type="submit" class="primary-action">Save note</button>
+            </div>
+
+            <p id="addNoteResult" class="kb-result hidden" role="status" aria-live="polite"></p>
+          </form>
+
+          <details class="kb-help">
+            <summary>How notes change a report</summary>
+            <p>
+              A note is read automatically whenever a matching property is analyzed. If it ends with a
+              <code>| Flag | Severity | Why |</code> table, those rows appear in Policy Restrictions and Sources,
+              and every HIGH row becomes a risk that can change the recommendation.
+            </p>
+            <p>
+              A note can also state machine-readable limits that are checked against the investor's own
+              assumptions. Add a section titled <strong>NorthStar Machine-Readable Summary</strong> with lines like
+              <code>rent_growth_cap_percent: 3</code> or <code>short_term_rental_allowed: false</code>.
+            </p>
+          </details>
+        </section>
+      </div>
+
+      <section id="noteViewer" class="kb-viewer hidden" aria-live="polite">
+        <div class="panel-heading">
+          <div>
+            <h2 id="noteTitle">Note</h2>
+            <p class="panel-note" id="noteMeta"></p>
+          </div>
+          <button type="button" class="secondary-action" id="closeNote">Close</button>
+        </div>
+        <div id="noteBody" class="note-body"></div>
+      </section>
+    </main>
+
+    <script src="/static/knowledge_bank.js?v={{ asset_version }}"></script>
+  </body>
+</html>

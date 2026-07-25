@@ -10,7 +10,8 @@ This local MVP does not use paid APIs or live real estate data. The sample marke
 
 ## Architecture
 
-- `app/main.py`: FastAPI app, page route, health endpoint, sample property endpoint, location-check endpoint, analysis endpoint.
+- `app/main.py`: FastAPI app, page routes, health endpoint, sample property endpoint, location-check endpoint, knowledge-bank endpoints, analysis endpoint.
+- `app/knowledge_bank.py`: scanning, parsing, rendering, and writing knowledge-bank notes.
 - `app/schemas.py`: Pydantic request validation.
 - `app/finance.py`: deterministic financial model, return metrics, projection metrics, and recommendation rules.
 - `app/data_loader.py`: local JSON data loading and fallback logic.
@@ -68,6 +69,29 @@ Example:
 ```text
 knowledge_bank/properties/725_n_delaware_st_46202/hoa_restrictions.md
 ```
+
+## Knowledge Bank Page
+
+`http://localhost:8000/knowledge-bank` is a browsable library of every policy note the project holds. It is built by scanning the folder at request time, so anything added — by the research Skill, by the in-app form, or by dropping a file in — appears immediately.
+
+Each note shows where it applies, when it was researched, how many high-attention flags it carries, how many citations are official versus secondary, and how many diligence follow-ups it raises. Notes older than 120 days are marked stale. Clicking through renders the full note as HTML, so the official `.gov` source links are clickable instead of buried in a text dump.
+
+The same page has an **Add a local policy note** form. Pick where the note applies (ZIP, state, city, a single property, everywhere, or a custom folder), paste the text, and save — the file is written into `knowledge_bank/` and picked up by the next analysis. See [knowledge_bank/README.md](knowledge_bank/README.md) for the optional sections that let a note raise risk flags or correct the financial model.
+
+## Notes That Correct the Financial Model
+
+A note may declare machine-readable limits:
+
+```markdown
+## NorthStar Machine-Readable Summary
+
+- rent_growth_cap_percent: 0
+- short_term_rental_allowed: false
+```
+
+NorthStar checks those against the assumptions entered. Analyzing the Brooklyn sample with 3% rent growth opens the report with a red panel: the Rent Guidelines Board froze stabilized leases at 0%, so the IRR and equity multiple below assume growth the law does not permit. This is the knowledge bank reaching into the deterministic model rather than sitting beside it as commentary.
+
+Notes also feed a **Diligence Checklist** in the report, built from their "unverified / confirm with / obtain" lines, each labeled with the note it came from.
 
 ## Bundled Researched Policy Notes
 

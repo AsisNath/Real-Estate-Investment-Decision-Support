@@ -239,12 +239,18 @@ function knowledgeBankPanel(knowledgeBank) {
           ]
             .filter(Boolean)
             .join(" &middot; ");
+          const citations =
+            doc.official_citations + doc.secondary_citations > 0
+              ? `${doc.official_citations} official / ${doc.secondary_citations} secondary citations`
+              : "";
           return `
             <details class="knowledge-doc">
               <summary>${escapeHtml(doc.place || doc.relative_path)}</summary>
               ${meta ? `<p class="doc-meta">${meta}</p>` : ""}
+              ${citations ? `<p class="doc-meta">${citations}</p>` : ""}
+              ${doc.is_stale ? `<p class="doc-meta stale-note">This note is ${doc.days_old} days old. Re-run the research Skill before relying on it.</p>` : ""}
               <p class="doc-meta">File: <code>${escapeHtml(doc.relative_path)}</code></p>
-              <pre>${escapeHtml(doc.excerpt)}</pre>
+              <div class="note-body">${doc.html || `<pre>${escapeHtml(doc.excerpt)}</pre>`}</div>
             </details>
           `;
         })
@@ -265,6 +271,61 @@ function knowledgeBankPanel(knowledgeBank) {
       </div>
       <p class="muted">${knowledgeBank.instructions}</p>
       ${documentsHtml}
+      <a class="kb-link" href="/knowledge-bank">Open the Knowledge Bank to browse or add notes &rarr;</a>
+    </section>
+  `;
+}
+
+function assumptionConflictsPanel(conflicts) {
+  if (!conflicts || conflicts.length === 0) return "";
+
+  return `
+    <section class="report-section conflict-block">
+      <div class="section-title">
+        <div>
+          <h3>Assumptions the Local Rules Do Not Support</h3>
+          <p>Knowledge-bank notes record limits that contradict the numbers entered above.</p>
+        </div>
+      </div>
+      <div class="item-list">
+        ${conflicts
+          .map(
+            (conflict) => `
+              <article class="list-item ${conflict.level}">
+                <h4>${escapeHtml(conflict.title)}</h4>
+                <p>${escapeHtml(conflict.detail)}</p>
+              </article>
+            `
+          )
+          .join("")}
+      </div>
+    </section>
+  `;
+}
+
+function diligencePanel(items) {
+  if (!items || items.length === 0) return "";
+
+  return `
+    <section class="report-section">
+      <div class="section-title">
+        <div>
+          <h3>Diligence Checklist</h3>
+          <p>Open questions the policy notes say must be confirmed before closing.</p>
+        </div>
+      </div>
+      <ul class="diligence-list">
+        ${items
+          .map(
+            (entry) => `
+              <li>
+                <span>${escapeHtml(entry.item)}</span>
+                <code>${escapeHtml(entry.source_document)}</code>
+              </li>
+            `
+          )
+          .join("")}
+      </ul>
     </section>
   `;
 }
@@ -347,6 +408,7 @@ function renderReport(report) {
 
   reportEl.innerHTML = `
     ${locationCheckPanel(report.location_check)}
+    ${assumptionConflictsPanel(report.assumption_conflicts)}
 
     <div class="recommendation ${recommendationClass}">
       <div>
@@ -420,6 +482,8 @@ function renderReport(report) {
       <h4 class="subsection-label">Read more online</h4>
       ${sourceLinks(report.policy.links)}
     </section>
+
+    ${diligencePanel(report.diligence_items)}
 
     ${knowledgeBankPanel(report.knowledge_bank)}
 

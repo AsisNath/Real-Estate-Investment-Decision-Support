@@ -43,3 +43,11 @@
 | Rent-regulation layer unknown (stabilized vs Good Cause vs exempt) | HIGH | Determines whether rent growth is 0%, ~CPI+5%, or uncapped — check DHCR registration |
 | Building type unknown (condo / co-op / rental) | HIGH | Co-op sublet rules can block rental use; condo is the workable case |
 | Deposit capped at 1 month; 14-day return or total forfeiture | LOW | Operational compliance; strict but manageable |
+
+## NorthStar Machine-Readable Summary
+
+Values below summarize the cited findings above so NorthStar can check them against the investor's own assumptions. The rent cap reflects the Rent Guidelines Board freeze for rent-stabilized leases commencing Oct 2026 - Sep 2027; a confirmed market-rate or condo unit is not capped at zero.
+
+- short_term_rental_allowed: false
+- rent_growth_cap_percent: 0
+- security_deposit_cap_months: 1

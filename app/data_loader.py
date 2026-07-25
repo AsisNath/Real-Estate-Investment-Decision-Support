@@ -6,6 +6,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from app.knowledge_bank import parse_policy_note, render_markdown
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -244,50 +246,6 @@ def _slug(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
 
 
-_SEVERITY_MAP = {"HIGH": "high", "MEDIUM": "medium", "LOW": "low", "INFO": "low"}
-
-
-def parse_policy_note(content: str) -> dict[str, Any]:
-    """Extract the heading, research date, and High-Attention Flags from a policy note.
-
-    The property-policy-research Skill writes a fixed structure ending in a
-    "| Flag | Severity | Why |" table precisely so the report layer can act on
-    those findings instead of only displaying the text. Notes that do not follow
-    the structure simply yield no flags.
-    """
-    heading_match = re.search(r"^#\s+(.+)$", content, re.M)
-    heading = heading_match.group(1).strip() if heading_match else ""
-    place = re.sub(r"^Policy Notes\s*[-–—]\s*", "", heading).strip()
-
-    researched_match = re.search(r"^\*\*Researched:\*\*\s*(.+)$", content, re.M)
-    researched = researched_match.group(1).strip() if researched_match else None
-
-    flags: list[dict[str, str]] = []
-    sections = re.split(r"^##\s*\d*\.?\s*High-Attention Flags.*$", content, flags=re.M | re.I)
-    if len(sections) > 1:
-        for line in sections[1].splitlines():
-            line = line.strip()
-            if not line.startswith("|"):
-                if line.startswith("#"):
-                    break
-                continue
-            cells = [cell.strip() for cell in line.strip("|").split("|")]
-            if len(cells) < 3:
-                continue
-            if cells[0].lower() == "flag" or set(cells[0]) <= {"-", ":"}:
-                continue
-            token = re.sub(r"[^A-Za-z]", "", cells[1].split("(")[0]).upper()
-            flags.append(
-                {
-                    "level": _SEVERITY_MAP.get(token, "medium"),
-                    "title": cells[0],
-                    "detail": cells[2],
-                }
-            )
-
-    return {"heading": heading, "place": place, "researched": researched, "flags": flags}
-
-
 def _read_text_file(path: Path, max_chars: int = 2200) -> dict[str, Any]:
     content = path.read_text(encoding="utf-8", errors="ignore").strip()
     excerpt = content[:max_chars]
@@ -299,10 +257,17 @@ def _read_text_file(path: Path, max_chars: int = 2200) -> dict[str, Any]:
         "name": path.name,
         "relative_path": path.relative_to(KNOWLEDGE_BANK_DIR).as_posix(),
         "excerpt": excerpt,
+        "html": render_markdown(content),
         "place": parsed["place"],
         "researched": parsed["researched"],
+        "days_old": parsed["days_old"],
+        "is_stale": parsed["is_stale"],
         "flag_count": len(parsed["flags"]),
         "flags": parsed["flags"],
+        "facts": parsed["facts"],
+        "diligence": parsed["diligence"],
+        "official_citations": parsed["official_citations"],
+        "secondary_citations": parsed["secondary_citations"],
     }
 
 
@@ -346,6 +311,10 @@ def load_knowledge_bank_context(address: str, city: str, state: str, zip_code: s
     # Flags parsed out of researched policy notes, so the report can act on them
     # rather than leaving the findings buried in a text excerpt.
     researched_flags: list[dict[str, str]] = []
+    diligence_items: list[dict[str, str]] = []
+    declared_facts: dict[str, Any] = {}
+    stale_notes: list[str] = []
+
     for document in documents:
         for flag in document["flags"]:
             item = dict(flag)
@@ -356,10 +325,23 @@ def load_knowledge_bank_context(address: str, city: str, state: str, zip_code: s
                 item["researched"] = document["researched"]
             researched_flags.append(item)
 
+        for entry in document["diligence"]:
+            diligence_items.append({"item": entry, "source_document": document["relative_path"]})
+
+        # A more specific note wins: candidate_dirs runs general to specific.
+        for key, value in document["facts"].items():
+            declared_facts[key] = {"value": value, "source_document": document["relative_path"]}
+
+        if document["is_stale"]:
+            stale_notes.append(document["relative_path"])
+
     return {
         "folder_path": str(KNOWLEDGE_BANK_DIR),
         "documents": documents,
         "researched_flags": researched_flags,
+        "diligence_items": diligence_items,
+        "declared_facts": declared_facts,
+        "stale_notes": stale_notes,
         "searched_locations": [
             directory.relative_to(KNOWLEDGE_BANK_DIR).as_posix() for directory in candidate_dirs
         ],

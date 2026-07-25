@@ -120,6 +120,53 @@ def build_opportunities(metrics: dict[str, Any], market_context: dict[str, Any])
     return opportunities
 
 
+def build_assumption_conflicts(
+    assumptions: dict[str, Any],
+    declared_facts: dict[str, Any],
+) -> list[dict[str, str]]:
+    """Compare the user's assumptions against limits declared in policy notes.
+
+    A note can state machine-readable facts such as `rent_growth_cap_percent: 0`.
+    When an assumption exceeds a legal ceiling, the projection is not achievable
+    and the investor needs to know before reading the IRR.
+    """
+    conflicts: list[dict[str, str]] = []
+
+    cap_entry = declared_facts.get("rent_growth_cap_percent")
+    if cap_entry and isinstance(cap_entry.get("value"), (int, float)):
+        cap = float(cap_entry["value"])
+        entered = float(assumptions.get("annual_rent_growth_percent", 0))
+        if entered > cap:
+            conflicts.append(
+                {
+                    "level": "high",
+                    "title": "Rent Growth Exceeds the Local Legal Cap",
+                    "detail": (
+                        f"The assumptions use {entered:g}% annual rent growth, but the policy note "
+                        f"for this location records a cap of {cap:g}%. Every projection, IRR, and "
+                        f"equity multiple above assumes growth the local rules do not allow. "
+                        f"Source: {cap_entry['source_document']}."
+                    ),
+                }
+            )
+
+    str_entry = declared_facts.get("short_term_rental_allowed")
+    if str_entry and str_entry.get("value") is False:
+        conflicts.append(
+            {
+                "level": "medium",
+                "title": "Short-Term Rental Income Is Not Available Here",
+                "detail": (
+                    "The policy note records that short-term rental use is not available to an "
+                    "investor at this location, so the rent assumption must be supported by "
+                    f"long-term lease comps. Source: {str_entry['source_document']}."
+                ),
+            }
+        )
+
+    return conflicts
+
+
 def build_report(
     request: AnalysisRequest,
     market_context: dict[str, Any],
@@ -164,15 +211,23 @@ def build_report(
     missing_flags.extend(market_context.get("missing_data_flags", []))
     missing_flags.extend(policy_context.get("missing_data_flags", []))
 
+    assumption_conflicts = build_assumption_conflicts(
+        assumptions,
+        knowledge_bank_context.get("declared_facts", {}),
+    )
+
     recommendation = recommendation_from_metrics(
         metrics,
         policy_risk_level,
-        # A location mismatch means the market and policy sections may describe
-        # the wrong place, so it counts against a confident recommendation.
-        len(missing_flags) + (1 if location_mismatch else 0),
+        # A location mismatch, or an assumption the local rules do not allow,
+        # means the numbers above may not describe reality.
+        len(missing_flags)
+        + (1 if location_mismatch else 0)
+        + sum(1 for conflict in assumption_conflicts if conflict["level"] == "high"),
     )
 
     risks = build_risks(metrics, market_context, policy_context, missing_flags)
+    risks = assumption_conflicts + risks
     for flag in researched_flags:
         if flag["level"] == "high":
             risks.append(
@@ -210,6 +265,8 @@ def build_report(
         "market": market_context,
         "policy": policy_context,
         "knowledge_bank": knowledge_bank_context,
+        "assumption_conflicts": assumption_conflicts,
+        "diligence_items": knowledge_bank_context.get("diligence_items", []),
         "location_check": location_check,
         "financials": metrics,
         "risks": risks,

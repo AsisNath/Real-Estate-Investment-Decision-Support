@@ -42,3 +42,11 @@
 | HOA CC&Rs unknown for parcel | HIGH | A recorded rental restriction can void either strategy |
 | No rent control | INFO (positive) | Rent growth capped by market only |
 | 30-day deposit return + bad-faith treble penalty | LOW | Standard operational compliance |
+
+## NorthStar Machine-Readable Summary
+
+Values below summarize the cited findings above so NorthStar can check them against the investor's own assumptions. Edit them if the note is updated.
+
+- short_term_rental_allowed: true
+- rent_growth_cap_percent: none
+- security_deposit_cap_months: none

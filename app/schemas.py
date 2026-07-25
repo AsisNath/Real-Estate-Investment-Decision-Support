@@ -35,6 +35,18 @@ class LocationCheckRequest(BaseModel):
     zip_code: str = ""
 
 
+class NewNoteRequest(BaseModel):
+    """A policy note the user is adding through the app."""
+
+    scope: str = "custom"
+    value: str = ""
+    state: str = ""
+    folder: str = ""
+    filename: str = "policy-notes.md"
+    content: str = Field(..., min_length=1)
+    overwrite: bool = False
+
+
 class HealthResponse(BaseModel):
     status: str
     app: str

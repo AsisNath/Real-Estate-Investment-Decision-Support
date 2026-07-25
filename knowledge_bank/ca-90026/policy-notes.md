@@ -42,3 +42,11 @@
 | RSO exact cap unverified against official page | MEDIUM | City site blocked automated check — confirm 3% figure with LAHD directly |
 | AB 1482 cap 8.7% (Aug 2026–Jul 2027) if not RSO | INFO | Still a real ceiling on rent-growth assumptions, unlike Texas |
 | Deposit capped at 1 month (AB 12) | LOW | Affects cash buffer modeling, minor |
+
+## NorthStar Machine-Readable Summary
+
+Values below summarize the cited findings above so NorthStar can check them against the investor's own assumptions. The rent cap reflects the City RSO formula (90% of CPI, 4% maximum) that applies to most pre-October-1978 units in this ZIP; a confirmed non-RSO unit falls under the AB 1482 cap instead.
+
+- short_term_rental_allowed: false
+- rent_growth_cap_percent: 4
+- security_deposit_cap_months: 1

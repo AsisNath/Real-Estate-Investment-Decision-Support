@@ -30,9 +30,26 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
 
+def asset_version() -> str:
+    """Newest timestamp among the static files, used to bust the browser cache.
+
+    Without this, a browser can keep an old app.js after the server restarts,
+    which makes fixed code look broken.
+    """
+    stamps = [
+        int(path.stat().st_mtime)
+        for path in (BASE_DIR / "static").glob("*")
+        if path.is_file()
+    ]
+    return str(max(stamps)) if stamps else "0"
+
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "asset_version": asset_version()},
+    )
 
 
 @app.get("/api/health", response_model=HealthResponse)

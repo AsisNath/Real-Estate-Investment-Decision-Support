@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NorthStar Property Investment Consulting</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">AI-powered investment decision support</p>
+        <h1>NorthStar Property Investment Consulting</h1>
+      </div>
+      <div class="header-status">
+        <span class="status-dot"></span>
+        Local analysis tool
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="input-panel" aria-label="Property inputs">
+        <div class="panel-heading">
+          <div>
+            <h2>Analyze a Property</h2>
+            <p class="panel-note">Required property details plus editable assumptions.</p>
+          </div>
+          <select id="sampleSelect" aria-label="Load sample property">
+            <option value="">Load sample</option>
+          </select>
+        </div>
+
+        <form id="analysisForm">
+          <div class="input-key" aria-label="Input categories">
+            <span><i class="key-chip required"></i>Required property data</span>
+            <span><i class="key-chip finance"></i>Editable finance data</span>
+            <span><i class="key-chip expense"></i>Editable expense and growth data</span>
+          </div>
+
+          <fieldset class="input-group property-group">
+            <legend>
+              <span>Property</span>
+              <strong>Required</strong>
+            </legend>
+            <label class="required-field">
+              <span>Full address</span>
+              <input name="address" required value="725 N Delaware St" />
+            </label>
+            <div class="field-grid three">
+              <label class="required-field">
+                <span>City</span>
+                <input name="city" required value="Indianapolis" />
+              </label>
+              <label class="required-field">
+                <span>State</span>
+                <input name="state" maxlength="2" required value="IN" />
+              </label>
+              <label class="required-field">
+                <span>ZIP</span>
+                <input name="zip_code" required value="46202" />
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="input-group finance-group">
+            <legend>
+              <span>Purchase and Financing</span>
+              <strong>Editable</strong>
+            </legend>
+            <div class="field-grid two">
+              <label class="editable-field">
+                <span>Purchase price</span>
+                <input name="purchase_price" type="number" min="1" step="1000" required value="260000" />
+              </label>
+              <label class="editable-field">
+                <span>Monthly rent</span>
+                <input name="monthly_rent" type="number" min="0" step="50" required value="2600" />
+              </label>
+              <label class="editable-field">
+                <span>Down payment %</span>
+                <input name="down_payment_percent" type="number" min="0" max="100" step="0.1" value="20" />
+              </label>
+              <label class="editable-field">
+                <span>Interest rate %</span>
+                <input name="interest_rate_percent" type="number" min="0" max="25" step="0.01" value="6.75" />
+              </label>
+              <label class="editable-field">
+                <span>Loan term</span>
+                <input name="loan_term_years" type="number" min="1" max="40" step="1" value="30" />
+              </label>
+              <label class="editable-field">
+                <span>Closing costs %</span>
+                <input name="closing_cost_percent" type="number" min="0" max="15" step="0.1" value="3" />
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="input-group expense-group">
+            <legend>
+              <span>Expenses and Growth</span>
+              <strong>Editable</strong>
+            </legend>
+            <div class="field-grid two">
+              <label class="editable-field">
+                <span>Annual property tax</span>
+                <input name="annual_property_tax" type="number" min="0" step="100" value="3300" />
+              </label>
+              <label class="editable-field">
+                <span>Annual insurance</span>
+                <input name="annual_insurance" type="number" min="0" step="100" value="1600" />
+              </label>
+              <label class="editable-field">
+                <span>Monthly HOA</span>
+                <input name="monthly_hoa_fee" type="number" min="0" step="25" value="0" />
+              </label>
+              <label class="editable-field">
+                <span>Maintenance % of rent</span>
+                <input name="maintenance_percent_of_rent" type="number" min="0" max="50" step="0.1" value="8" />
+              </label>
+              <label class="editable-field">
+                <span>Fixed monthly maintenance</span>
+                <input name="monthly_maintenance" type="number" min="0" step="25" value="0" />
+              </label>
+              <label class="editable-field">
+                <span>Vacancy %</span>
+                <input name="vacancy_percent" type="number" min="0" max="100" step="0.1" value="6" />
+              </label>
+              <label class="editable-field">
+                <span>Management %</span>
+                <input name="property_management_percent" type="number" min="0" max="100" step="0.1" value="8" />
+              </label>
+              <label class="editable-field">
+                <span>Appreciation %</span>
+                <input name="annual_appreciation_percent" type="number" min="-20" max="30" step="0.1" value="3" />
+              </label>
+              <label class="editable-field">
+                <span>Rent growth %</span>
+                <input name="annual_rent_growth_percent" type="number" min="-20" max="30" step="0.1" value="3" />
+              </label>
+              <label class="editable-field">
+                <span>Expense growth %</span>
+                <input name="annual_expense_growth_percent" type="number" min="0" max="30" step="0.1" value="2.5" />
+              </label>
+              <label class="editable-field">
+                <span>Selling costs %</span>
+                <input name="selling_cost_percent" type="number" min="0" max="15" step="0.1" value="6" />
+              </label>
+            </div>
+          </fieldset>
+
+          <button class="primary-action" type="submit">Analyze Property</button>
+        </form>
+      </section>
+
+      <section class="report-panel" aria-live="polite">
+        <div id="emptyState" class="empty-state">
+          <h2>Investor Report</h2>
+          <p>Run an analysis to generate financial metrics, market context, policy warnings, risks, opportunities, and a final recommendation.</p>
+        </div>
+
+        <div id="loadingState" class="loading-state hidden">
+          <div class="loader"></div>
+          <p>Building investor report...</p>
+        </div>
+
+        <div id="report" class="report hidden"></div>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

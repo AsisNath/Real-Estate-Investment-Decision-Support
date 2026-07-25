@@ -1,0 +1,316 @@
+{
+  "zip_policies": {
+    "46202": {
+      "jurisdiction_name": "Indianapolis / Marion County sample",
+      "landlord_tenant_summary": "Indiana landlord-tenant obligations should be verified against Indiana Code Title 32, Article 31 and current local procedures. Indiana state resources emphasize that landlord-tenant issues are mostly handled through statutes, courts, and legal counsel rather than a single state complaint agency.",
+      "rent_control_summary": "No local rent-control cap is flagged for this Indianapolis sample. Indiana Code includes a state-level limitation on local units regulating rental rates and the landlord-tenant relationship, but current law should still be checked before relying on this assumption.",
+      "short_term_rental_summary": "Indianapolis has a short-term rental permit program. STR underwriting should assume registration, annual permitting, possible inspection, and local enforcement until the exact property is verified.",
+      "rental_restriction_summary": "No address-specific HOA, condo, deed, or subdivision documents were reviewed. These private restrictions can override an otherwise positive rental analysis and must be checked manually or placed in the knowledge bank.",
+      "risk_level": "medium",
+      "source_label": "Sample policy knowledge bank with official read-more links",
+      "retrieval_date": "2026-07-19",
+      "confidence": "medium",
+      "restriction_flags": [
+        {
+          "level": "high",
+          "category": "Short-term rental",
+          "title": "Indianapolis STR permit required",
+          "detail": "Chapter 852 establishes an Indianapolis short-term rental permit program. Do not underwrite STR income without confirming permit eligibility, fees, inspection, and renewal requirements."
+        },
+        {
+          "level": "medium",
+          "category": "HOA/rental limits",
+          "title": "Private restrictions not verified",
+          "detail": "HOA, condo, deed, or subdivision rental limits are not available from the address alone. Add those documents to the knowledge bank if they exist."
+        }
+      ],
+      "links": [
+        {
+          "category": "Landlord-tenant",
+          "label": "Indiana IHCDA renter resources",
+          "url": "https://www.in.gov/ihcda/homeowners-and-renters/renters-rights/"
+        },
+        {
+          "category": "Landlord-tenant / rent restrictions",
+          "label": "Indiana Code Title 32, Article 31",
+          "url": "https://iga.in.gov/laws/2025/ic/titles/32"
+        },
+        {
+          "category": "Short-term rental",
+          "label": "Indianapolis Short-Term Rental Permit Program",
+          "url": "https://library.municode.com/in/indianapolis_-_marion_county/codes/code_of_ordinances?nodeId=TITIVBUCORELI_CH852INSHRMREPEPR"
+        },
+        {
+          "category": "HOA/rental limits",
+          "label": "Indiana Code Title 32, Article 25.5 Homeowners Associations",
+          "url": "https://iga.in.gov/laws/2025/ic/titles/32"
+        }
+      ]
+    },
+    "63109": {
+      "jurisdiction_name": "St. Louis area sample",
+      "landlord_tenant_summary": "Missouri rules should be verified at state, city, county, and municipal levels. In Greater St. Louis, exact jurisdiction matters because occupancy permits, inspections, and local rental rules may differ by municipality.",
+      "rent_control_summary": "No broad rent-control cap is assumed in this sample record, but local ordinances, occupancy rules, and tenant procedures should be checked for the exact address.",
+      "short_term_rental_summary": "St. Louis short-term rental rules are a high-attention item. City materials describe permit requirements under Ordinance 71729, while also noting a court order affecting enforcement. Treat STR income as uncertain until the exact address and current enforcement status are verified.",
+      "rental_restriction_summary": "No HOA documents were reviewed. For single-family rentals, also verify occupancy permits, zoning, nuisance rules, and municipal rental requirements.",
+      "risk_level": "high",
+      "source_label": "Sample policy knowledge bank with official read-more links",
+      "retrieval_date": "2026-07-19",
+      "confidence": "medium",
+      "restriction_flags": [
+        {
+          "level": "high",
+          "category": "Short-term rental",
+          "title": "STR enforcement uncertainty",
+          "detail": "The City of St. Louis short-term rental page notes permit requirements and a court order affecting enforcement. Do not rely on STR income without verifying current status."
+        },
+        {
+          "level": "medium",
+          "category": "Local jurisdiction",
+          "title": "ZIP code may span multiple rule environments",
+          "detail": "Confirm the exact city/county/municipality for the address before relying on policy assumptions."
+        }
+      ],
+      "links": [
+        {
+          "category": "Landlord-tenant",
+          "label": "Missouri Attorney General landlord-tenant law",
+          "url": "https://ago.mo.gov/get-help/programs-services-from-a-z/landlord-tenant-law/"
+        },
+        {
+          "category": "Short-term rental",
+          "label": "St. Louis short-term rental permits",
+          "url": "https://www.stlouis-mo.gov/government/departments/public-safety/building/permits/short-term-rental-permits/index.cfm"
+        },
+        {
+          "category": "Short-term rental",
+          "label": "St. Louis Ordinance 71940",
+          "url": "https://www.stlouis-mo.gov/government/city-laws/ordinances/ordinance.cfm?ord=71940"
+        },
+        {
+          "category": "HOA/rental limits",
+          "label": "Missouri condominium association powers",
+          "url": "https://revisor.mo.gov/main/OneSection.aspx?hlr=y&section=448.3-102"
+        }
+      ]
+    },
+    "78704": {
+      "jurisdiction_name": "Austin, TX sample",
+      "landlord_tenant_summary": "Texas residential tenancy rules are primarily in Texas Property Code Chapter 92. Austin-specific rules, registration requirements, and notices should also be verified for the property.",
+      "rent_control_summary": "No rent-control cap is flagged in this sample. Still verify current city, county, and state restrictions before making rent-growth assumptions.",
+      "short_term_rental_summary": "Austin STR rules are a high-attention item. City materials state that STRs are regulated by ordinance and require licensing, with platform enforcement tied to active licenses. Do not underwrite STR income without confirming the exact property's eligibility.",
+      "rental_restriction_summary": "Condo, HOA, deed, or property owners' association restrictions may limit rentals. These are often private documents and should be added to the knowledge bank when available.",
+      "risk_level": "high",
+      "source_label": "Sample policy knowledge bank with official read-more links",
+      "retrieval_date": "2026-07-19",
+      "confidence": "medium",
+      "restriction_flags": [
+        {
+          "level": "high",
+          "category": "Short-term rental",
+          "title": "Austin STR license risk",
+          "detail": "Austin requires STR licensing and has active enforcement rules. Verify eligibility, local-contact rules, tax reporting, and platform requirements before using STR income."
+        },
+        {
+          "level": "medium",
+          "category": "HOA/rental limits",
+          "title": "Association documents required",
+          "detail": "Texas HOA rights depend heavily on governing documents plus state law. Add HOA documents to the knowledge bank if the property is in an association."
+        }
+      ],
+      "links": [
+        {
+          "category": "Landlord-tenant",
+          "label": "Texas Property Code Chapter 92",
+          "url": "https://statutes.capitol.texas.gov/Docs/PR/htm/PR.92.htm"
+        },
+        {
+          "category": "Short-term rental",
+          "label": "Austin short-term rentals",
+          "url": "https://www.austintexas.gov/development-services/short-term-rentals"
+        },
+        {
+          "category": "Short-term rental",
+          "label": "Austin STR license application",
+          "url": "https://www.austintexas.gov/services/apply-short-term-rental-license"
+        },
+        {
+          "category": "HOA/rental limits",
+          "label": "Texas State Law Library HOA rights",
+          "url": "https://www.sll.texas.gov/faqs/hoa-rights/"
+        }
+      ]
+    }
+  },
+  "state_policies": {
+    "IN": {
+      "jurisdiction_name": "Indiana state-level fallback",
+      "landlord_tenant_summary": "Verify lease rules, deposit handling, habitability, notices, and eviction process against Indiana Code and current local procedures.",
+      "rent_control_summary": "No rent-control cap is assumed in this fallback. Verify Indiana Code and any city/county rules for the exact property.",
+      "short_term_rental_summary": "Check city and county rules before assuming short-term rental use. Indianapolis properties should be checked against the Indianapolis STR permit program.",
+      "rental_restriction_summary": "HOA, condo, and deed restrictions are not public in this sample. Verify separately or place them in the knowledge bank.",
+      "risk_level": "medium",
+      "source_label": "State-level sample policy fallback with official read-more links",
+      "retrieval_date": "2026-07-19",
+      "confidence": "low",
+      "restriction_flags": [
+        {
+          "level": "medium",
+          "category": "Local rules",
+          "title": "City/county STR rules not resolved",
+          "detail": "The state fallback cannot confirm local STR registration, zoning, or inspection rules."
+        }
+      ],
+      "links": [
+        {
+          "category": "Landlord-tenant",
+          "label": "Indiana IHCDA renter resources",
+          "url": "https://www.in.gov/ihcda/homeowners-and-renters/renters-rights/"
+        },
+        {
+          "category": "Landlord-tenant / rent restrictions",
+          "label": "Indiana Code Title 32",
+          "url": "https://iga.in.gov/laws/2025/ic/titles/32"
+        },
+        {
+          "category": "Short-term rental",
+          "label": "Indianapolis STR permit program example",
+          "url": "https://library.municode.com/in/indianapolis_-_marion_county/codes/code_of_ordinances?nodeId=TITIVBUCORELI_CH852INSHRMREPEPR"
+        }
+      ]
+    },
+    "MO": {
+      "jurisdiction_name": "Missouri state-level fallback",
+      "landlord_tenant_summary": "Verify state law, city ordinances, county rules, and occupancy permit requirements. Missouri Attorney General resources provide a starting point for landlord-tenant responsibilities.",
+      "rent_control_summary": "No rent-control cap is assumed in this fallback. Verify municipal ordinances and tenant-protection rules.",
+      "short_term_rental_summary": "STR legality can vary by municipality and enforcement status.",
+      "rental_restriction_summary": "HOA or deed restrictions are not verified unless documents are provided.",
+      "risk_level": "medium",
+      "source_label": "State-level sample policy fallback with official read-more links",
+      "retrieval_date": "2026-07-19",
+      "confidence": "low",
+      "restriction_flags": [
+        {
+          "level": "medium",
+          "category": "Local jurisdiction",
+          "title": "Municipal rules not resolved",
+          "detail": "Missouri local rental, occupancy, and STR rules can vary by city or municipality."
+        }
+      ],
+      "links": [
+        {
+          "category": "Landlord-tenant",
+          "label": "Missouri Attorney General landlord-tenant law",
+          "url": "https://ago.mo.gov/get-help/programs-services-from-a-z/landlord-tenant-law/"
+        },
+        {
+          "category": "Short-term rental",
+          "label": "St. Louis STR permits example",
+          "url": "https://www.stlouis-mo.gov/government/departments/public-safety/building/permits/short-term-rental-permits/index.cfm"
+        },
+        {
+          "category": "HOA/rental limits",
+          "label": "Missouri condominium association powers",
+          "url": "https://revisor.mo.gov/main/OneSection.aspx?hlr=y&section=448.3-102"
+        }
+      ]
+    },
+    "TX": {
+      "jurisdiction_name": "Texas state-level fallback",
+      "landlord_tenant_summary": "Verify residential tenancy rules against Texas Property Code Chapter 92 and city-specific requirements.",
+      "rent_control_summary": "No rent-control cap is assumed in this fallback. Verify city and state rules before relying on rent-growth assumptions.",
+      "short_term_rental_summary": "Short-term rental rules vary significantly by city. Austin has a licensing regime and is treated as a high-attention example.",
+      "rental_restriction_summary": "HOA and deed restrictions can be decisive and must be verified separately.",
+      "risk_level": "medium",
+      "source_label": "State-level sample policy fallback with official read-more links",
+      "retrieval_date": "2026-07-19",
+      "confidence": "low",
+      "restriction_flags": [
+        {
+          "level": "medium",
+          "category": "HOA/rental limits",
+          "title": "Association documents not reviewed",
+          "detail": "Texas HOA limits often depend on governing documents. Add those files to the knowledge bank if available."
+        }
+      ],
+      "links": [
+        {
+          "category": "Landlord-tenant",
+          "label": "Texas Property Code Chapter 92",
+          "url": "https://statutes.capitol.texas.gov/Docs/PR/htm/PR.92.htm"
+        },
+        {
+          "category": "Short-term rental",
+          "label": "Austin STR rules example",
+          "url": "https://www.austintexas.gov/development-services/short-term-rentals"
+        },
+        {
+          "category": "HOA/rental limits",
+          "label": "Texas State Law Library HOA rights",
+          "url": "https://www.sll.texas.gov/faqs/hoa-rights/"
+        }
+      ]
+    },
+    "FL": {
+      "jurisdiction_name": "Florida state-level fallback",
+      "landlord_tenant_summary": "Verify residential tenancy rules against Florida Statutes Chapter 83, Part II.",
+      "rent_control_summary": "Florida residential tenancy regulation is substantially state-level under Chapter 83. Verify current law and any local rules that still apply outside preempted topics.",
+      "short_term_rental_summary": "Vacation rental rules can involve state classification, local zoning, business tax, tourist tax, and association restrictions. Verify city/county requirements for the exact property.",
+      "rental_restriction_summary": "HOA and condo restrictions are common and must be checked for the exact property.",
+      "risk_level": "medium",
+      "source_label": "State-level sample policy fallback with official read-more links",
+      "retrieval_date": "2026-07-19",
+      "confidence": "low",
+      "restriction_flags": [
+        {
+          "level": "high",
+          "category": "HOA/rental limits",
+          "title": "Association restrictions may be decisive",
+          "detail": "Florida HOA or condo documents can materially limit lease terms, STR use, tenant approval, and rental frequency."
+        }
+      ],
+      "links": [
+        {
+          "category": "Landlord-tenant / rent restrictions",
+          "label": "Florida Statutes Chapter 83",
+          "url": "https://www.flsenate.gov/Laws/Statutes/2025/Chapter83/All"
+        },
+        {
+          "category": "Short-term rental",
+          "label": "Florida vacation rental classification",
+          "url": "https://www.flsenate.gov/Laws/Statutes/2025/0509.242"
+        },
+        {
+          "category": "HOA/rental limits",
+          "label": "Florida HOA Act Chapter 720",
+          "url": "https://www.flsenate.gov/Laws/Statutes/2025/Chapter720/All"
+        },
+        {
+          "category": "HOA/rental limits",
+          "label": "Florida Condominium Act Chapter 718",
+          "url": "https://www.flsenate.gov/Laws/Statutes/2025/Chapter718/All"
+        }
+      ]
+    }
+  },
+  "national_default": {
+    "jurisdiction_name": "Generic policy fallback",
+    "landlord_tenant_summary": "No local policy record was found. Verify landlord-tenant law for the state, county, and city.",
+    "rent_control_summary": "Unknown. Verify rent increase limits and tenant protections.",
+    "short_term_rental_summary": "Unknown. Verify STR legality before underwriting STR income.",
+    "rental_restriction_summary": "Unknown. HOA, condo, deed, and lease restrictions must be verified separately.",
+    "risk_level": "medium",
+    "source_label": "Generic policy fallback",
+    "retrieval_date": "2026-07-19",
+    "confidence": "low",
+    "restriction_flags": [
+      {
+        "level": "high",
+        "category": "Missing local policy",
+        "title": "Local law not resolved",
+        "detail": "The app did not find a state or ZIP policy record. Add local policy notes to the knowledge bank before relying on the report."
+      }
+    ],
+    "links": []
+  }
+}

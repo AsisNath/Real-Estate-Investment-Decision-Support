@@ -1,0 +1,132 @@
+{
+  "zip_markets": {
+    "46202": {
+      "market_name": "Indianapolis, IN - Near North / Downtown sample",
+      "median_rent_estimate": 1850,
+      "median_home_value_note": "Sample market data suggests central Indianapolis has active rental demand from hospitals, universities, and downtown employment.",
+      "rent_trend": "Moderate rent growth potential, with demand strongest near employment and medical anchors.",
+      "home_value_trend": "Long-term appreciation assumption should be conservative because submarket performance varies block by block.",
+      "property_tax_note": "Indiana property taxes vary by county and exemptions. Investor-owned property may not receive owner-occupied deductions.",
+      "insurance_risk_note": "Typical Midwest insurance considerations; verify roof age, storm history, and replacement cost coverage.",
+      "insurance_risk_level": "low",
+      "demand_driver": "Hospitals, universities, downtown employers, and renter demand for central locations.",
+      "source_label": "Sample market dataset based on public-market style fields",
+      "retrieval_date": "2026-07-19",
+      "confidence": "medium"
+    },
+    "63109": {
+      "market_name": "St. Louis, MO - South City sample",
+      "median_rent_estimate": 1650,
+      "median_home_value_note": "Sample market data indicates stable owner-occupant and rental demand in established South City neighborhoods.",
+      "rent_trend": "Stable to moderate rent growth; property condition and school/neighborhood boundaries can strongly affect rent.",
+      "home_value_trend": "Modest appreciation assumptions are more defensible than aggressive growth assumptions.",
+      "property_tax_note": "Verify St. Louis city or county tax records, assessments, and reassessment timing.",
+      "insurance_risk_note": "Older housing stock can create higher maintenance and insurance underwriting questions.",
+      "insurance_risk_level": "medium",
+      "demand_driver": "Established neighborhoods, access to city amenities, and demand for single-family rentals.",
+      "source_label": "Sample market dataset based on public-market style fields",
+      "retrieval_date": "2026-07-19",
+      "confidence": "medium"
+    },
+    "78704": {
+      "market_name": "Austin, TX - South Austin sample",
+      "median_rent_estimate": 2950,
+      "median_home_value_note": "Sample market data suggests high demand but high entry prices in central Austin submarkets.",
+      "rent_trend": "Strong renter demand, but affordability and supply cycles can pressure rent growth assumptions.",
+      "home_value_trend": "Potential appreciation upside exists, but purchase price sensitivity is high.",
+      "property_tax_note": "Texas property taxes can be material. Verify assessed value, exemptions, and local tax rates.",
+      "insurance_risk_note": "Review hail, flood, and replacement-cost coverage. Premiums can change materially.",
+      "insurance_risk_level": "medium",
+      "demand_driver": "Technology employment, lifestyle demand, and central-location scarcity.",
+      "source_label": "Sample market dataset based on public-market style fields",
+      "retrieval_date": "2026-07-19",
+      "confidence": "medium"
+    },
+    "33602": {
+      "market_name": "Tampa, FL - Urban core sample",
+      "median_rent_estimate": 2600,
+      "median_home_value_note": "Sample market data suggests strong renter demand but elevated insurance and climate-related diligence needs.",
+      "rent_trend": "Demand has been strong, but rent assumptions should be stress-tested against new supply and affordability.",
+      "home_value_trend": "Appreciation can be attractive but volatile during insurance or rate shocks.",
+      "property_tax_note": "Florida property taxes and reassessment after sale should be verified carefully for investors.",
+      "insurance_risk_note": "Wind, flood, and insurance availability are major diligence items in Florida markets.",
+      "insurance_risk_level": "high",
+      "demand_driver": "Population growth, downtown employment, and lifestyle migration.",
+      "source_label": "Sample market dataset based on public-market style fields",
+      "retrieval_date": "2026-07-19",
+      "confidence": "medium"
+    }
+  },
+  "state_defaults": {
+    "IN": {
+      "market_name": "Indiana state-level fallback",
+      "median_rent_estimate": 1500,
+      "median_home_value_note": "State-level sample fallback only. Use local comps before buying.",
+      "rent_trend": "Many Indiana markets are stable but local rent varies by school district, employer base, and property condition.",
+      "home_value_trend": "Use conservative appreciation unless local evidence supports more.",
+      "property_tax_note": "Verify county-level tax records and investor property classification.",
+      "insurance_risk_note": "Verify roof, storm exposure, and replacement cost.",
+      "insurance_risk_level": "low",
+      "demand_driver": "Affordability and employment access.",
+      "source_label": "State-level sample fallback",
+      "retrieval_date": "2026-07-19",
+      "confidence": "low"
+    },
+    "MO": {
+      "market_name": "Missouri state-level fallback",
+      "median_rent_estimate": 1450,
+      "median_home_value_note": "State-level sample fallback only. Confirm exact city and county dynamics.",
+      "rent_trend": "Stable rental demand in many metros, but neighborhood-level differences are important.",
+      "home_value_trend": "Use conservative appreciation assumptions unless local comps support more.",
+      "property_tax_note": "Verify county assessor and reassessment timing.",
+      "insurance_risk_note": "Older housing and storm exposure can affect insurance and maintenance.",
+      "insurance_risk_level": "medium",
+      "demand_driver": "Affordability and metro employment bases.",
+      "source_label": "State-level sample fallback",
+      "retrieval_date": "2026-07-19",
+      "confidence": "low"
+    },
+    "TX": {
+      "market_name": "Texas state-level fallback",
+      "median_rent_estimate": 2100,
+      "median_home_value_note": "State-level sample fallback only. Texas market performance varies sharply by metro.",
+      "rent_trend": "Population growth can support rent demand, but supply growth can pressure rents.",
+      "home_value_trend": "Use metro-specific comps because Texas markets are not uniform.",
+      "property_tax_note": "Property taxes can be high. Verify local rates and reassessment after purchase.",
+      "insurance_risk_note": "Hail, wind, flood, and replacement cost should be reviewed.",
+      "insurance_risk_level": "medium",
+      "demand_driver": "Population and job growth in major metros.",
+      "source_label": "State-level sample fallback",
+      "retrieval_date": "2026-07-19",
+      "confidence": "low"
+    },
+    "FL": {
+      "market_name": "Florida state-level fallback",
+      "median_rent_estimate": 2400,
+      "median_home_value_note": "State-level sample fallback only. Confirm insurance, flood zone, and local rent comps.",
+      "rent_trend": "Population growth can support demand, but affordability and insurance costs are major constraints.",
+      "home_value_trend": "Appreciation assumptions should be stress-tested against insurance and climate risk.",
+      "property_tax_note": "Verify post-sale reassessment and investor tax treatment.",
+      "insurance_risk_note": "Insurance cost and availability may be one of the largest investment risks.",
+      "insurance_risk_level": "high",
+      "demand_driver": "Migration, tourism, and employment growth in selected metros.",
+      "source_label": "State-level sample fallback",
+      "retrieval_date": "2026-07-19",
+      "confidence": "low"
+    }
+  },
+  "national_default": {
+    "market_name": "National sample fallback",
+    "median_rent_estimate": 1800,
+    "median_home_value_note": "No local sample market data found.",
+    "rent_trend": "Use current local rent comps before relying on this estimate.",
+    "home_value_trend": "Use conservative appreciation until local comps are verified.",
+    "property_tax_note": "Verify local tax records.",
+    "insurance_risk_note": "Verify insurance cost, hazards, and property condition.",
+    "insurance_risk_level": "medium",
+    "demand_driver": "Local demand driver not found.",
+    "source_label": "Generic national fallback",
+    "retrieval_date": "2026-07-19",
+    "confidence": "low"
+  }
+}

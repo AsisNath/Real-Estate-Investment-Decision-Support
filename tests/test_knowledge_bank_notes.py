@@ -57,7 +57,7 @@ def test_bundled_austin_note_is_discovered_and_parsed():
     context = load_knowledge_bank_context("1200 S Congress Ave", "Austin", "TX", "78704")
 
     paths = [doc["relative_path"] for doc in context["documents"]]
-    assert "tx-78704/policy-notes.md" in paths
+    assert "zips/78704/policy-notes.md" in paths
 
     titles = [flag["title"] for flag in context["researched_flags"]]
     assert any("STR license" in title for title in titles)

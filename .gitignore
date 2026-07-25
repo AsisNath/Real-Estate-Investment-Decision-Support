@@ -7,6 +7,10 @@ __pycache__/
 # Office temp/lock files
 ~$*
 
+# Analysis trails are per-user run records, not source. They stay on disk for
+# inspection but are not versioned.
+knowledge_bank/**/_analysis-log.md
+
 # OS
 Thumbs.db
 .DS_Store

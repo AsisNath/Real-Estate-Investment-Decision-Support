@@ -6,7 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from app.knowledge_bank import parse_policy_note, render_markdown
+from app.knowledge_bank import is_trace_file, parse_policy_note, render_markdown
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -305,6 +305,9 @@ def load_knowledge_bank_context(address: str, city: str, state: str, zip_code: s
                 path.is_file()
                 and path.suffix.lower() in {".md", ".txt"}
                 and path.name.lower() != "readme.md"
+                # Analysis trails are written by the app; reading them back
+                # would feed the report its own past output.
+                and not is_trace_file(path.name)
             ):
                 documents.append(_read_text_file(path))
 

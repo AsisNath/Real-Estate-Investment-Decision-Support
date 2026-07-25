@@ -669,6 +669,11 @@ select:focus {
   background: #fbfdff;
 }
 
+.kb-note.trace {
+  border-left-color: #7a8a99;
+  background: #f7f9fb;
+}
+
 .kb-note.stale {
   border-left-color: var(--amber);
   background: #fffdf5;

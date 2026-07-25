@@ -15,7 +15,14 @@ from app.data_loader import (
     load_policy_context,
     load_sample_properties,
 )
-from app.knowledge_bank import build_folder, create_note, read_note, scan_knowledge_bank
+from app.knowledge_bank import (
+    build_folder,
+    create_note,
+    read_note,
+    read_trace,
+    record_analysis,
+    scan_knowledge_bank,
+)
 from app.schemas import (
     AnalysisRequest,
     HealthResponse,
@@ -82,6 +89,17 @@ def knowledge_bank_note(path: str):
         raise HTTPException(status_code=400, detail=str(error))
 
 
+@app.get("/api/knowledge-bank/trace")
+def knowledge_bank_trace(path: str):
+    """Read an analysis trail file so the user can inspect past runs."""
+    try:
+        return read_trace(path)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="That trace file was not found.")
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+
+
 @app.post("/api/knowledge-bank/notes", status_code=201)
 def add_knowledge_bank_note(payload: NewNoteRequest):
     """Save a policy note the user wrote or pasted into the app."""
@@ -129,10 +147,14 @@ def analyze_property(payload: AnalysisRequest):
         payload.state,
         payload.zip_code,
     )
-    return build_report(
+    report = build_report(
         payload,
         market_context,
         policy_context,
         knowledge_bank_context,
         location_check,
     )
+    # Leave an audit trail beside that ZIP's notes so the sources behind this
+    # recommendation can be traced later.
+    report["analysis_log"] = record_analysis(report)
+    return report

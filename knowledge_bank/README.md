@@ -1,42 +1,51 @@
 # NorthStar Knowledge Bank
 
-Use this folder for local policy, HOA, condo, lease, lender, or rental-law notes that are not available from the built-in sample source links.
+This folder is NorthStar's local library of policy, HOA, lease, lender, and rental-law information. It is plain files — nothing here is a database, and you can open, edit, or delete anything with a text editor.
 
-NorthStar reads `.md` and `.txt` files from these locations for each analysis:
+## The Skill versus this folder
 
-- `knowledge_bank/global`
-- `knowledge_bank/states/STATE`
-- `knowledge_bank/zips/ZIP`
-- `knowledge_bank/cities/city_state`
-- `knowledge_bank/properties/address_zip`
-- `knowledge_bank/state-zip` (e.g. `tx-78704`, written by the policy research Skill)
-- `knowledge_bank/state-city_slug` (e.g. `tx-austin`, written by the policy research Skill)
+These are two different things that are easy to confuse:
 
-Examples:
+| | `property-policy-research` (the Skill) | `knowledge_bank/` (this folder) |
+|---|---|---|
+| What it is | Instructions an AI agent follows | A folder of files |
+| Where it lives | `.claude/skills/property-policy-research/` | here |
+| What it does | Researches rental rules on the live web and writes a note | Stores notes and hands them to the app |
+| Who runs it | You, in Claude Code / Cowork / claude.ai | Nobody — the app just reads it |
+| Needs internet | Yes | No |
 
-- Indiana statewide notes: `knowledge_bank/states/IN/landlord_tenant_notes.md`
-- ZIP-specific notes: `knowledge_bank/zips/46202/rental_policy_notes.md`
-- City-specific notes: `knowledge_bank/cities/indianapolis_in/short_term_rental_notes.md`
-- Property-specific HOA notes: `knowledge_bank/properties/725_n_delaware_st_46202/hoa_restrictions.md`
+**The Skill writes into this folder. The app only reads from it.** The app never goes online: it reads whatever files are sitting here at the moment you click Analyze.
 
-Suggested file topics:
+## Three ways files get in here
 
-- Rent increase limits or rent-control rules
-- Landlord registration or rental licensing
-- Short-term rental permits, caps, taxes, or enforcement
-- HOA, condo, deed, or subdivision rental restrictions
-- Local inspection, occupancy, zoning, or nuisance rules
-- Property-tax or insurance notes that affect the investment
+1. **The research Skill.** Ask Claude *"Run policy diligence on 250 5th Ave, Brooklyn, NY 11215"* and it researches the rules, verifies them against official `.gov` sources, and writes a dated, cited note to `zips/11215/policy-notes.md`.
+2. **The app's Knowledge Bank page.** Open `http://localhost:8000/knowledge-bank`, use the "Add a local policy note" form, pick where it applies, paste your text, and save.
+3. **By hand.** Drop a `.md` or `.txt` file into the right folder yourself.
 
-## Automatic policy notes
+All three are equivalent — the app cannot tell them apart and does not care.
 
-Notes can also be generated automatically by the `property-policy-research` agent Skill (in `.claude/skills/`). Given an address, it web-searches short-term rental permits, landlord-tenant law, rent control, and HOA restrictions, then writes `policy-notes.md` into `knowledge_bank/<state>-<zip>/`. Every fact in a generated note includes a source link, an "as of" date, and an official (✅) or secondary (⚠) tag. Facts tagged secondary should be confirmed with the issuing authority before relying on them.
+## Folder layout
 
-## Adding notes from inside the app
+Folders run from broad to specific. A property picks up every folder that matches it, so a Brooklyn condo reads `global/`, `states/NY/`, `zips/11215/`, `cities/brooklyn_ny/`, and its own property folder.
 
-Open `http://localhost:8000/knowledge-bank` while NorthStar is running. That page lists every note in this folder and has an "Add a local policy note" form: choose where the note applies (ZIP, state, city, one property, everywhere, or a custom folder), paste the text, and save. The file is written straight into this folder, and the next analysis of a matching property picks it up. The "Insert template" button fills in the structure described below.
+```text
+knowledge_bank/
+├── global/                      every property
+├── states/NY/                   any property in New York
+├── zips/11215/                  that ZIP
+├── cities/brooklyn_ny/          that city
+└── properties/250_5th_ave_11215/   one specific address
+```
 
-You can also just drop `.md` or `.txt` files into these folders by hand. Both routes are equivalent.
+Folders are created on demand — only ones that hold a note exist.
+
+Older notes in a flat `<state>-<zip>/` folder (for example `ny-11215/`) are still read, so nothing breaks if you have them.
+
+## Analysis trail (`_analysis-log.md`)
+
+Every time you analyze a property, NorthStar appends a record to `zips/<ZIP>/_analysis-log.md`: the address, the recommendation, which market and policy records matched, which notes were read, and which flags fired. That is the traceability record — months later you can open the folder for a ZIP and see exactly what produced a past recommendation.
+
+**Files beginning with `_` are written by the app and are never read back into a report.** Do not name your own notes with a leading underscore. You can delete a log at any time; it is a record, not an input.
 
 ## What makes a note do more than display
 
@@ -65,5 +74,9 @@ Any note is shown in the report. A note gains extra power if it includes either 
 If the analysis uses a rent-growth assumption above `rent_growth_cap_percent`, the report opens with a warning that the projections assume growth the local rules do not allow, and names the note it came from. Use `none` when a limit does not apply.
 
 Notes are also scanned for lines containing "unverified", "confirm with", or "obtain", which become the report's **Diligence Checklist**. A note with a `**Researched:**` date older than 120 days is marked stale.
+
+## Good things to keep here
+
+Rent-increase limits, landlord registration and licensing rules, short-term rental permits and caps, HOA or condo rental restrictions, deed restrictions, inspection and occupancy rules, lender conditions, and lease restrictions.
 
 Do not store passwords, API keys, bank information, or sensitive personal information here.

@@ -121,11 +121,37 @@ function renderList(notes) {
     .join("");
 }
 
+function renderTraces(traces) {
+  const panel = document.querySelector("#tracePanel");
+  const list = document.querySelector("#traceList");
+  if (!traces || traces.length === 0) {
+    panel.classList.add("hidden");
+    return;
+  }
+
+  panel.classList.remove("hidden");
+  list.innerHTML = traces
+    .map(
+      (trace) => `
+        <article class="kb-note trace">
+          <div class="kb-note-head">
+            <h3>${escapeHtml(trace.applies_to)}</h3>
+            <span class="badge low">${trace.entry_count} run${trace.entry_count === 1 ? "" : "s"}</span>
+          </div>
+          <p class="kb-note-path"><code>${escapeHtml(trace.relative_path)}</code></p>
+          <button type="button" class="secondary-action" data-trace="${escapeHtml(trace.relative_path)}">View trail</button>
+        </article>
+      `
+    )
+    .join("");
+}
+
 async function loadInventory() {
   const response = await fetch("/api/knowledge-bank");
   const data = await response.json();
   allNotes = data.notes;
   renderSummary(data);
+  renderTraces(data.traces);
   applyFilter();
 }
 
@@ -139,19 +165,35 @@ function applyFilter() {
   renderList(filtered);
 }
 
+function showInViewer(title, meta, html) {
+  noteTitle.textContent = title;
+  noteMeta.textContent = meta;
+  noteBody.innerHTML = html;
+  viewer.classList.remove("hidden");
+  viewer.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 async function openNote(path) {
   const response = await fetch(`/api/knowledge-bank/note?path=${encodeURIComponent(path)}`);
   if (!response.ok) return;
   const note = await response.json();
 
-  noteTitle.textContent = note.place || note.name;
   const bits = [note.applies_to];
   if (note.researched) bits.push(`Researched ${note.researched}`);
   bits.push(`${note.official_citations} official / ${note.secondary_citations} secondary citations`);
-  noteMeta.textContent = bits.join(" · ");
-  noteBody.innerHTML = note.html;
-  viewer.classList.remove("hidden");
-  viewer.scrollIntoView({ behavior: "smooth", block: "start" });
+  showInViewer(note.place || note.name, bits.join(" · "), note.html);
+}
+
+async function openTrace(path) {
+  const response = await fetch(`/api/knowledge-bank/trace?path=${encodeURIComponent(path)}`);
+  if (!response.ok) return;
+  const trace = await response.json();
+
+  showInViewer(
+    `Analysis trail - ${trace.applies_to}`,
+    "Written by NorthStar on each analysis. Never read back into a report.",
+    trace.html
+  );
 }
 
 function syncScopeFields() {
@@ -165,6 +207,11 @@ function syncScopeFields() {
 listEl.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-path]");
   if (button) openNote(button.dataset.path);
+});
+
+document.querySelector("#traceList").addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-trace]");
+  if (button) openTrace(button.dataset.trace);
 });
 
 document.querySelector("#closeNote").addEventListener("click", () => {

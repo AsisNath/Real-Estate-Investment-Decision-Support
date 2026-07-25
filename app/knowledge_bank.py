@@ -22,6 +22,12 @@ NOTE_SUFFIXES = {".md", ".txt"}
 MAX_NOTE_BYTES = 200_000
 STALE_AFTER_DAYS = 120
 
+# Files beginning with "_" are written by the app, not by a researcher. They are
+# kept beside the notes for traceability but never read as policy findings.
+TRACE_PREFIX = "_"
+ANALYSIS_LOG_NAME = "_analysis-log.md"
+MAX_LOG_ENTRIES = 40
+
 _SEVERITY_MAP = {"HIGH": "high", "MEDIUM": "medium", "LOW": "low", "INFO": "low"}
 _DATE_FORMATS = ("%B %d, %Y", "%b %d, %Y", "%B %d %Y", "%Y-%m-%d", "%m/%d/%Y")
 _DILIGENCE_HINTS = ("unverified", "confirm with", "obtain ", "confirm directly")
@@ -191,11 +197,17 @@ def describe_scope(relative_folder: str) -> str:
     return f"Folder {folder}"
 
 
+def is_trace_file(name: str) -> bool:
+    """True for app-written trace files, which are never parsed as policy notes."""
+    return name.startswith(TRACE_PREFIX)
+
+
 def _is_note(path: Path) -> bool:
     return (
         path.is_file()
         and path.suffix.lower() in NOTE_SUFFIXES
         and path.name.lower() != "readme.md"
+        and not is_trace_file(path.name)
     )
 
 
@@ -235,14 +247,125 @@ def scan_knowledge_bank(root: Path | None = None) -> dict[str, Any]:
                 }
             )
 
+    traces: list[dict[str, Any]] = []
+    if root.exists():
+        for path in sorted(root.rglob(f"{TRACE_PREFIX}*")):
+            if not path.is_file() or path.suffix.lower() not in NOTE_SUFFIXES:
+                continue
+            content = path.read_text(encoding="utf-8", errors="ignore")
+            relative = path.relative_to(root)
+            traces.append(
+                {
+                    "relative_path": relative.as_posix(),
+                    "name": path.name,
+                    "applies_to": describe_scope(relative.parent.as_posix()),
+                    "entry_count": len(re.findall(r"^##\s", content, re.M)),
+                    "size_bytes": path.stat().st_size,
+                }
+            )
+
     return {
         "folder_path": str(root),
         "note_count": len(notes),
         "notes": notes,
+        "traces": traces,
         "high_flag_total": sum(note["flag_counts"]["high"] for note in notes),
         "stale_count": sum(1 for note in notes if note["is_stale"]),
         "stale_after_days": STALE_AFTER_DAYS,
     }
+
+
+def read_trace(relative_path: str, root: Path | None = None) -> dict[str, Any]:
+    """Read an app-written trace file so the user can inspect the audit trail."""
+    root = root or KNOWLEDGE_BANK_DIR
+    path = safe_note_path(relative_path, root)
+    if not path.exists() or not path.is_file() or not is_trace_file(path.name):
+        raise FileNotFoundError(relative_path)
+
+    content = path.read_text(encoding="utf-8", errors="ignore")
+    relative = path.relative_to(root.resolve())
+    return {
+        "relative_path": relative.as_posix(),
+        "name": path.name,
+        "applies_to": describe_scope(relative.parent.as_posix()),
+        "content": content,
+        "html": render_markdown(content),
+    }
+
+
+def record_analysis(report: dict[str, Any], root: Path | None = None) -> str | None:
+    """Append what an analysis actually used to a log beside that ZIP's notes.
+
+    This is the traceability record: months later the user can open the folder
+    for a ZIP and see which market record, which policy record, and which notes
+    produced a given recommendation. Never raises - a failed write must not
+    break an analysis.
+    """
+    root = root or KNOWLEDGE_BANK_DIR
+    try:
+        prop = report.get("property", {})
+        zip_code = re.sub(r"[^0-9]", "", str(prop.get("zip_code", "")))[:5]
+        if len(zip_code) != 5:
+            return None
+
+        policy = report.get("policy", {})
+        market = report.get("market", {})
+        knowledge_bank = report.get("knowledge_bank", {})
+        recommendation = report.get("recommendation", {})
+
+        notes_read = [doc["relative_path"] for doc in knowledge_bank.get("documents", [])]
+        applied_flags = [
+            f"{flag['title']} ({flag['level']})"
+            for flag in policy.get("restriction_flags", [])
+        ]
+        conflicts = [item["title"] for item in report.get("assumption_conflicts", [])]
+
+        lines = [
+            f"## {datetime.now().strftime('%Y-%m-%d %H:%M')} - "
+            f"{prop.get('address', '')}, {prop.get('city', '')}, "
+            f"{prop.get('state', '')} {prop.get('zip_code', '')}",
+            "",
+            f"- Recommendation: {recommendation.get('status', 'n/a')} "
+            f"(overall risk: {report.get('overall_risk', 'n/a')})",
+            f"- Market record: {market.get('market_name', 'n/a')} "
+            f"[{market.get('match_level', 'n/a')}-level match]",
+            f"- Policy record: {policy.get('jurisdiction_name', 'n/a')} "
+            f"[{policy.get('match_level', 'n/a')}-level match]",
+            f"- Jurisdictions reviewed: {'; '.join(policy.get('jurisdiction_levels', [])) or 'n/a'}",
+            f"- Knowledge-bank notes read: {', '.join(notes_read) if notes_read else 'none'}",
+            f"- Address check: {report.get('location_check', {}).get('status', 'n/a')}",
+            f"- Policy flags applied: {'; '.join(applied_flags) if applied_flags else 'none'}",
+            f"- Assumption conflicts: {'; '.join(conflicts) if conflicts else 'none'}",
+            "",
+        ]
+        entry = "\n".join(lines)
+
+        target = root / "zips" / zip_code / ANALYSIS_LOG_NAME
+        target.parent.mkdir(parents=True, exist_ok=True)
+
+        header = (
+            f"# Analysis trail - ZIP {zip_code}\n\n"
+            "Written by NorthStar each time a property in this ZIP is analyzed, so the "
+            "sources behind a past recommendation can be traced. This file is a record, "
+            "not policy research: NorthStar never reads it back into a report.\n\n"
+        )
+        existing = ""
+        if target.exists():
+            previous = target.read_text(encoding="utf-8", errors="ignore")
+            # Keep everything from the first entry heading onward; splitting on
+            # blank lines would eat the first entry's own heading.
+            start = previous.find("\n## ")
+            existing = previous[start + 1 :] if start != -1 else ""
+
+        entries = [block for block in re.split(r"\n(?=## )", existing.strip()) if block.strip()]
+        entries.insert(0, entry.strip())
+        target.write_text(
+            header + "\n\n".join(entries[:MAX_LOG_ENTRIES]) + "\n",
+            encoding="utf-8",
+        )
+        return target.relative_to(root.resolve()).as_posix()
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
 
 
 def read_note(relative_path: str, root: Path | None = None) -> dict[str, Any]:

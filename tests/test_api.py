@@ -7,6 +7,8 @@ would add an httpx dependency the app does not otherwise need.
 import pytest
 from fastapi import HTTPException
 
+import app.main as main_module
+
 import app.knowledge_bank as knowledge_bank
 from app.main import (
     add_knowledge_bank_note,
@@ -16,6 +18,15 @@ from app.main import (
     location_check,
 )
 from app.schemas import AnalysisRequest, LocationCheckRequest, NewNoteRequest
+
+
+@pytest.fixture(autouse=True)
+def no_analysis_trail(monkeypatch):
+    """Keep these tests from writing trail files into the real knowledge bank.
+
+    The trail itself is covered by tests/test_analysis_trail.py.
+    """
+    monkeypatch.setattr(main_module, "record_analysis", lambda report: None)
 
 
 def test_location_check_endpoint_flags_state_mismatch():
@@ -60,14 +71,14 @@ def test_inventory_lists_the_bundled_notes():
     inventory = knowledge_bank_inventory()
 
     paths = [note["relative_path"] for note in inventory["notes"]]
-    assert "tx-78704/policy-notes.md" in paths
-    assert "ca-90026/policy-notes.md" in paths
-    assert "ny-11215/policy-notes.md" in paths
+    assert "zips/78704/policy-notes.md" in paths
+    assert "zips/90026/policy-notes.md" in paths
+    assert "zips/11215/policy-notes.md" in paths
     assert inventory["high_flag_total"] >= 6
 
 
 def test_note_endpoint_renders_html():
-    note = knowledge_bank_note("ny-11215/policy-notes.md")
+    note = knowledge_bank_note("zips/11215/policy-notes.md")
 
     assert "Brooklyn" in note["place"]
     assert "<table>" in note["html"]

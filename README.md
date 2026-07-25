@@ -55,20 +55,35 @@ Useful files include:
 NorthStar reads `.md` and `.txt` files from:
 
 ```text
-knowledge_bank/global
-knowledge_bank/states/STATE
-knowledge_bank/zips/ZIP
-knowledge_bank/cities/city_state
-knowledge_bank/properties/address_zip
-knowledge_bank/state-zip          (written by the policy research Skill, e.g. tx-78704)
-knowledge_bank/state-city_slug    (written by the policy research Skill, e.g. tx-austin)
+knowledge_bank/global                    every property
+knowledge_bank/states/STATE              any property in that state
+knowledge_bank/zips/ZIP                  that ZIP
+knowledge_bank/cities/city_state         that city
+knowledge_bank/properties/address_zip    one specific address
 ```
+
+Folders run broad to specific and are created on demand, so only folders holding a note exist. Older flat `state-zip` folders (for example `tx-78704`) are still read, so notes written by the standalone Lab 5 Skill keep working.
 
 Example:
 
 ```text
 knowledge_bank/properties/725_n_delaware_st_46202/hoa_restrictions.md
 ```
+
+## The Skill Versus the Knowledge Bank
+
+Two different things, easy to confuse:
+
+- **`property-policy-research`** (in `.claude/skills/`) is a **Skill** — instructions an AI agent follows. It researches rental rules on the live web and **writes** notes. You run it in Claude Code, Cowork, or claude.ai.
+- **`knowledge_bank/`** is a **folder of files**. The app **reads** it and never writes policy into it.
+
+Files get in three ways — through the Skill, through the app's Knowledge Bank page, or by dropping a file in by hand. The app cannot tell them apart. See [knowledge_bank/README.md](knowledge_bank/README.md) for the full explanation.
+
+## Traceability: the analysis trail
+
+Every analysis appends a record to `knowledge_bank/zips/<ZIP>/_analysis-log.md` capturing the address, the recommendation, which market and policy records matched, which notes were read, and which flags fired. Open the folder for a ZIP months later and you can see exactly what produced a past recommendation.
+
+Files beginning with `_` are written by the app and are never read back into a report, so the trail can never feed the analysis its own output. Trails are git-ignored — they are your run history, not project source.
 
 ## Knowledge Bank Page
 
@@ -99,9 +114,9 @@ Three notes produced by the research Skill ship with the project and are read au
 
 | Note | Market | Why it is interesting |
 |---|---|---|
-| `knowledge_bank/tx-78704/policy-notes.md` | Austin, TX | STR legal with a license; no rent control statewide |
-| `knowledge_bank/ca-90026/policy-notes.md` | Los Angeles, CA | STR effectively banned for investors; two overlapping rent-control regimes |
-| `knowledge_bank/ny-11215/policy-notes.md` | Brooklyn, NY | STR blocked by Local Law 18; rent freeze adopted for stabilized units |
+| `knowledge_bank/zips/78704/policy-notes.md` | Austin, TX | STR legal with a license; no rent control statewide |
+| `knowledge_bank/zips/90026/policy-notes.md` | Los Angeles, CA | STR effectively banned for investors; two overlapping rent-control regimes |
+| `knowledge_bank/zips/11215/policy-notes.md` | Brooklyn, NY | STR blocked by Local Law 18; rent freeze adopted for stabilized units |
 
 Each note ends with a `| Flag | Severity | Why |` table. NorthStar parses that table and feeds the findings into the report: the flags appear in **Policy Restrictions and Sources** tagged with the researched jurisdiction, every HIGH flag becomes a risk entry naming its source file, and a HIGH flag raises the overall policy risk, which can change the recommendation. Los Angeles and Brooklyn have no built-in sample policy record at all, so those reports are driven entirely by the researched notes — which is the knowledge bank doing exactly the job the proposal describes.
 

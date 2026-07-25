@@ -56,7 +56,12 @@ Then **start a new session** (skills load at session start) and just ask natural
 
 You do not need to name the Skill — Claude matches your request against the
 Skill's description and activates it automatically. Output is written to
-`knowledge_bank/<state>-<zip>/policy-notes.md` under your current working folder.
+`knowledge_bank/zips/<zip>/policy-notes.md` under your current working folder.
+
+> **Note for this project:** the copy of the Skill bundled with NorthStar writes
+> into the app's knowledge-bank hierarchy (`zips/<ZIP>/`). The standalone Lab 5
+> copy used a flat `<state>-<zip>/` folder; NorthStar still reads those, so notes
+> written by either version keep working.
 
 ### Claude Cowork / claude.ai
 

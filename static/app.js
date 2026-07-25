@@ -232,14 +232,22 @@ function knowledgeBankPanel(knowledgeBank) {
   const documents = knowledgeBank.documents || [];
   const documentsHtml = documents.length
     ? documents
-        .map(
-          (doc) => `
+        .map((doc) => {
+          const meta = [
+            doc.researched ? `Researched ${escapeHtml(doc.researched)}` : "",
+            doc.flag_count ? `${doc.flag_count} high-attention flag${doc.flag_count === 1 ? "" : "s"} applied to this report` : "",
+          ]
+            .filter(Boolean)
+            .join(" &middot; ");
+          return `
             <details class="knowledge-doc">
-              <summary>${escapeHtml(doc.relative_path)}</summary>
+              <summary>${escapeHtml(doc.place || doc.relative_path)}</summary>
+              ${meta ? `<p class="doc-meta">${meta}</p>` : ""}
+              <p class="doc-meta">File: <code>${escapeHtml(doc.relative_path)}</code></p>
               <pre>${escapeHtml(doc.excerpt)}</pre>
             </details>
-          `
-        )
+          `;
+        })
         .join("")
     : `<p class="muted">No matching knowledge-bank policy files were found for this property.</p>`;
 

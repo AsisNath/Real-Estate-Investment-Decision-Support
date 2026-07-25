@@ -562,6 +562,16 @@ select:focus {
   color: #39433d;
 }
 
+.doc-meta {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.doc-meta code {
+  font-size: 11px;
+}
+
 .location-notice {
   margin-top: 12px;
   padding: 11px 13px;

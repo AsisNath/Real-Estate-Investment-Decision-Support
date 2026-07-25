@@ -132,19 +132,56 @@ def build_report(
     location_check = location_check or {"status": "unverified", "warnings": [], "unverified": []}
     location_mismatch = location_check.get("status") == "warning"
 
+    # Findings researched by the property-policy-research Skill sit alongside the
+    # built-in sample records and can raise the policy risk on their own.
+    researched_flags = knowledge_bank_context.get("researched_flags", [])
+    if researched_flags:
+        policy_context = dict(policy_context)
+        # Placeholder flags that only say "add notes to the knowledge bank" are
+        # obsolete once researched notes are actually driving the report.
+        kept = [
+            flag
+            for flag in policy_context.get("restriction_flags", [])
+            if not flag.get("needs_knowledge_bank")
+        ]
+        existing_titles = {flag["title"] for flag in kept}
+        policy_context["restriction_flags"] = kept + [
+            flag for flag in researched_flags if flag["title"] not in existing_titles
+        ]
+        if policy_context.get("match_level") == "national":
+            policy_context["missing_data_flags"] = [
+                "No built-in policy record exists for this ZIP or state. The policy findings "
+                "below come from researched knowledge-bank notes instead. Check the source "
+                "links and the research date inside each note before relying on them."
+            ]
+
+    policy_risk_level = policy_context.get("risk_level", "medium")
+    if any(flag["level"] == "high" for flag in researched_flags):
+        policy_risk_level = "high"
+        policy_context["risk_level"] = "high"
+
     missing_flags = []
     missing_flags.extend(market_context.get("missing_data_flags", []))
     missing_flags.extend(policy_context.get("missing_data_flags", []))
 
     recommendation = recommendation_from_metrics(
         metrics,
-        policy_context.get("risk_level", "medium"),
+        policy_risk_level,
         # A location mismatch means the market and policy sections may describe
         # the wrong place, so it counts against a confident recommendation.
         len(missing_flags) + (1 if location_mismatch else 0),
     )
 
     risks = build_risks(metrics, market_context, policy_context, missing_flags)
+    for flag in researched_flags:
+        if flag["level"] == "high":
+            risks.append(
+                {
+                    "level": "high",
+                    "title": flag["title"],
+                    "detail": f"{flag['detail']} (Researched policy note: {flag['source_document']})",
+                }
+            )
     if location_mismatch:
         risks.insert(
             0,

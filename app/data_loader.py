@@ -244,15 +244,65 @@ def _slug(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
 
 
-def _read_text_file(path: Path, max_chars: int = 2200) -> dict[str, str]:
+_SEVERITY_MAP = {"HIGH": "high", "MEDIUM": "medium", "LOW": "low", "INFO": "low"}
+
+
+def parse_policy_note(content: str) -> dict[str, Any]:
+    """Extract the heading, research date, and High-Attention Flags from a policy note.
+
+    The property-policy-research Skill writes a fixed structure ending in a
+    "| Flag | Severity | Why |" table precisely so the report layer can act on
+    those findings instead of only displaying the text. Notes that do not follow
+    the structure simply yield no flags.
+    """
+    heading_match = re.search(r"^#\s+(.+)$", content, re.M)
+    heading = heading_match.group(1).strip() if heading_match else ""
+    place = re.sub(r"^Policy Notes\s*[-–—]\s*", "", heading).strip()
+
+    researched_match = re.search(r"^\*\*Researched:\*\*\s*(.+)$", content, re.M)
+    researched = researched_match.group(1).strip() if researched_match else None
+
+    flags: list[dict[str, str]] = []
+    sections = re.split(r"^##\s*\d*\.?\s*High-Attention Flags.*$", content, flags=re.M | re.I)
+    if len(sections) > 1:
+        for line in sections[1].splitlines():
+            line = line.strip()
+            if not line.startswith("|"):
+                if line.startswith("#"):
+                    break
+                continue
+            cells = [cell.strip() for cell in line.strip("|").split("|")]
+            if len(cells) < 3:
+                continue
+            if cells[0].lower() == "flag" or set(cells[0]) <= {"-", ":"}:
+                continue
+            token = re.sub(r"[^A-Za-z]", "", cells[1].split("(")[0]).upper()
+            flags.append(
+                {
+                    "level": _SEVERITY_MAP.get(token, "medium"),
+                    "title": cells[0],
+                    "detail": cells[2],
+                }
+            )
+
+    return {"heading": heading, "place": place, "researched": researched, "flags": flags}
+
+
+def _read_text_file(path: Path, max_chars: int = 2200) -> dict[str, Any]:
     content = path.read_text(encoding="utf-8", errors="ignore").strip()
     excerpt = content[:max_chars]
     if len(content) > max_chars:
         excerpt += "\n\n[Excerpt truncated in report. Open the file for the full text.]"
+
+    parsed = parse_policy_note(content)
     return {
         "name": path.name,
         "relative_path": path.relative_to(KNOWLEDGE_BANK_DIR).as_posix(),
         "excerpt": excerpt,
+        "place": parsed["place"],
+        "researched": parsed["researched"],
+        "flag_count": len(parsed["flags"]),
+        "flags": parsed["flags"],
     }
 
 
@@ -293,9 +343,23 @@ def load_knowledge_bank_context(address: str, city: str, state: str, zip_code: s
             ):
                 documents.append(_read_text_file(path))
 
+    # Flags parsed out of researched policy notes, so the report can act on them
+    # rather than leaving the findings buried in a text excerpt.
+    researched_flags: list[dict[str, str]] = []
+    for document in documents:
+        for flag in document["flags"]:
+            item = dict(flag)
+            item["category"] = "Researched policy note"
+            item["jurisdiction"] = document["place"] or document["relative_path"]
+            item["source_document"] = document["relative_path"]
+            if document["researched"]:
+                item["researched"] = document["researched"]
+            researched_flags.append(item)
+
     return {
         "folder_path": str(KNOWLEDGE_BANK_DIR),
         "documents": documents,
+        "researched_flags": researched_flags,
         "searched_locations": [
             directory.relative_to(KNOWLEDGE_BANK_DIR).as_posix() for directory in candidate_dirs
         ],

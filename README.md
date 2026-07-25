@@ -69,6 +69,20 @@ Example:
 knowledge_bank/properties/725_n_delaware_st_46202/hoa_restrictions.md
 ```
 
+## Bundled Researched Policy Notes
+
+Three notes produced by the research Skill ship with the project and are read automatically when the matching property is analyzed:
+
+| Note | Market | Why it is interesting |
+|---|---|---|
+| `knowledge_bank/tx-78704/policy-notes.md` | Austin, TX | STR legal with a license; no rent control statewide |
+| `knowledge_bank/ca-90026/policy-notes.md` | Los Angeles, CA | STR effectively banned for investors; two overlapping rent-control regimes |
+| `knowledge_bank/ny-11215/policy-notes.md` | Brooklyn, NY | STR blocked by Local Law 18; rent freeze adopted for stabilized units |
+
+Each note ends with a `| Flag | Severity | Why |` table. NorthStar parses that table and feeds the findings into the report: the flags appear in **Policy Restrictions and Sources** tagged with the researched jurisdiction, every HIGH flag becomes a risk entry naming its source file, and a HIGH flag raises the overall policy risk, which can change the recommendation. Los Angeles and Brooklyn have no built-in sample policy record at all, so those reports are driven entirely by the researched notes — which is the knowledge bank doing exactly the job the proposal describes.
+
+Use the "Load sample" menu to try them: the Los Angeles and Brooklyn samples both surface researched policy findings.
+
 ## Policy Research Skill (agent)
 
 The project includes a reusable agent Skill, `property-policy-research` (in `.claude/skills/`), that automates first-pass policy diligence. Given an address, it web-searches short-term rental permit rules, state landlord-tenant law, rent control status, and HOA rental restrictions, verifies findings against official `.gov` sources, and writes dated, source-cited notes to `knowledge_bank/<state>-<zip>/policy-notes.md`. Every fact carries a source link, an "as of" date, and an official-vs-secondary tag.

@@ -10,7 +10,9 @@
     "63304": { "city": "St. Charles", "county": "St. Charles County", "state": "MO" },
     "78704": { "city": "Austin", "county": "Travis County", "state": "TX" },
     "78701": { "city": "Austin", "county": "Travis County", "state": "TX" },
-    "33602": { "city": "Tampa", "county": "Hillsborough County", "state": "FL" }
+    "33602": { "city": "Tampa", "county": "Hillsborough County", "state": "FL" },
+    "90026": { "city": "Los Angeles", "county": "Los Angeles County", "state": "CA" },
+    "11215": { "city": "Brooklyn", "county": "Kings County", "state": "NY" }
   },
   "state_prefixes": [
     ["006", "009", "PR"],

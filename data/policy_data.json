@@ -350,7 +350,8 @@
         "category": "Missing local policy",
         "title": "Local law not resolved",
         "detail": "The app did not find a state or ZIP policy record. Add local policy notes to the knowledge bank before relying on the report.",
-        "jurisdiction": "Unknown jurisdiction"
+        "jurisdiction": "Unknown jurisdiction",
+        "needs_knowledge_bank": true
       }
     ],
     "links": []

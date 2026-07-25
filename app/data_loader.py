@@ -49,29 +49,85 @@ def load_market_context(zip_code: str, state: str) -> dict[str, Any]:
     return result
 
 
+def _merge_policy_records(records: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Combine restriction flags and source links from every matched jurisdiction level.
+
+    Most-specific record first. Duplicates are dropped (same flag title, or same
+    link URL + category), and every item keeps a jurisdiction label so the report
+    can group city/county, state, HOA, and other rules.
+    """
+    flags: list[dict[str, Any]] = []
+    links: list[dict[str, Any]] = []
+    seen_flags: set[str] = set()
+    seen_links: set[tuple[str, str]] = set()
+
+    for index, record in enumerate(records):
+        fallback_jurisdiction = record.get("jurisdiction_name", "Unknown jurisdiction")
+        for flag in record.get("restriction_flags", []):
+            # Flags marked fallback_only warn that local rules are unresolved;
+            # skip them when a more specific record already resolved those rules.
+            if index > 0 and flag.get("fallback_only"):
+                continue
+            if flag["title"] in seen_flags:
+                continue
+            seen_flags.add(flag["title"])
+            item = dict(flag)
+            item.pop("fallback_only", None)
+            item.setdefault("jurisdiction", fallback_jurisdiction)
+            flags.append(item)
+        for link in record.get("links", []):
+            key = (link["url"], link.get("category", ""))
+            if key in seen_links:
+                continue
+            seen_links.add(key)
+            item = dict(link)
+            item.setdefault("jurisdiction", fallback_jurisdiction)
+            links.append(item)
+
+    return flags, links
+
+
 def load_policy_context(zip_code: str, state: str) -> dict[str, Any]:
+    """Build a layered policy context covering every jurisdiction level that matches.
+
+    The most specific record (ZIP-level, which represents the city/county rules)
+    drives the summaries and risk level, but restriction flags and source links
+    are merged across city/county, state, and national levels so the report shows
+    all local law, HOA, and policy issues that might affect the investment.
+    """
     data = load_json("policy_data.json")
     zip_code = zip_code.strip()
     state = normalize_state(state)
 
+    matched: list[dict[str, Any]] = []
     if zip_code in data["zip_policies"]:
-        result = dict(data["zip_policies"][zip_code])
-        result["match_level"] = "zip"
-        result["missing_data_flags"] = []
-        return result
-
+        matched.append(data["zip_policies"][zip_code])
     if state in data["state_policies"]:
-        result = dict(data["state_policies"][state])
-        result["match_level"] = "state"
-        result["missing_data_flags"] = [
-            "Address-specific rental rules and HOA restrictions were not found. Verify city, county, and HOA documents."
-        ]
-        return result
+        matched.append(data["state_policies"][state])
 
-    result = dict(data["national_default"])
-    result["match_level"] = "national"
-    result["missing_data_flags"] = [
-        "Local policy data was not found. Treat this as a due-diligence gap."
+    if matched:
+        result = dict(matched[0])
+        if zip_code in data["zip_policies"]:
+            result["match_level"] = "zip"
+            result["missing_data_flags"] = []
+        else:
+            result["match_level"] = "state"
+            result["missing_data_flags"] = [
+                "Address-specific rental rules and HOA restrictions were not found. Verify city, county, and HOA documents."
+            ]
+    else:
+        matched.append(data["national_default"])
+        result = dict(data["national_default"])
+        result["match_level"] = "national"
+        result["missing_data_flags"] = [
+            "Local policy data was not found. Treat this as a due-diligence gap."
+        ]
+
+    flags, links = _merge_policy_records(matched)
+    result["restriction_flags"] = flags
+    result["links"] = links
+    result["jurisdiction_levels"] = [
+        record.get("jurisdiction_name", "Unknown jurisdiction") for record in matched
     ]
     return result
 

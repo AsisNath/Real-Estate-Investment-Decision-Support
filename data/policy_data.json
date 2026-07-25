@@ -15,35 +15,41 @@
           "level": "high",
           "category": "Short-term rental",
           "title": "Indianapolis STR permit required",
-          "detail": "Chapter 852 establishes an Indianapolis short-term rental permit program. Do not underwrite STR income without confirming permit eligibility, fees, inspection, and renewal requirements."
+          "detail": "Chapter 852 establishes an Indianapolis short-term rental permit program. Do not underwrite STR income without confirming permit eligibility, fees, inspection, and renewal requirements.",
+          "jurisdiction": "City of Indianapolis / Marion County"
         },
         {
           "level": "medium",
           "category": "HOA/rental limits",
           "title": "Private restrictions not verified",
-          "detail": "HOA, condo, deed, or subdivision rental limits are not available from the address alone. Add those documents to the knowledge bank if they exist."
+          "detail": "HOA, condo, deed, or subdivision rental limits are not available from the address alone. Add those documents to the knowledge bank if they exist.",
+          "jurisdiction": "HOA / private documents"
         }
       ],
       "links": [
         {
           "category": "Landlord-tenant",
           "label": "Indiana IHCDA renter resources",
-          "url": "https://www.in.gov/ihcda/homeowners-and-renters/renters-rights/"
+          "url": "https://www.in.gov/ihcda/homeowners-and-renters/renters-rights/",
+          "jurisdiction": "State of Indiana"
         },
         {
           "category": "Landlord-tenant / rent restrictions",
           "label": "Indiana Code Title 32, Article 31",
-          "url": "https://iga.in.gov/laws/2025/ic/titles/32"
+          "url": "https://iga.in.gov/laws/2025/ic/titles/32",
+          "jurisdiction": "State of Indiana"
         },
         {
           "category": "Short-term rental",
           "label": "Indianapolis Short-Term Rental Permit Program",
-          "url": "https://library.municode.com/in/indianapolis_-_marion_county/codes/code_of_ordinances?nodeId=TITIVBUCORELI_CH852INSHRMREPEPR"
+          "url": "https://library.municode.com/in/indianapolis_-_marion_county/codes/code_of_ordinances?nodeId=TITIVBUCORELI_CH852INSHRMREPEPR",
+          "jurisdiction": "City of Indianapolis / Marion County"
         },
         {
           "category": "HOA/rental limits",
           "label": "Indiana Code Title 32, Article 25.5 Homeowners Associations",
-          "url": "https://iga.in.gov/laws/2025/ic/titles/32"
+          "url": "https://iga.in.gov/laws/2025/ic/titles/32",
+          "jurisdiction": "State of Indiana"
         }
       ]
     },
@@ -62,35 +68,41 @@
           "level": "high",
           "category": "Short-term rental",
           "title": "STR enforcement uncertainty",
-          "detail": "The City of St. Louis short-term rental page notes permit requirements and a court order affecting enforcement. Do not rely on STR income without verifying current status."
+          "detail": "The City of St. Louis short-term rental page notes permit requirements and a court order affecting enforcement. Do not rely on STR income without verifying current status.",
+          "jurisdiction": "City of St. Louis"
         },
         {
           "level": "medium",
           "category": "Local jurisdiction",
           "title": "ZIP code may span multiple rule environments",
-          "detail": "Confirm the exact city/county/municipality for the address before relying on policy assumptions."
+          "detail": "Confirm the exact city/county/municipality for the address before relying on policy assumptions.",
+          "jurisdiction": "Local municipality (verify exact city/county)"
         }
       ],
       "links": [
         {
           "category": "Landlord-tenant",
           "label": "Missouri Attorney General landlord-tenant law",
-          "url": "https://ago.mo.gov/get-help/programs-services-from-a-z/landlord-tenant-law/"
+          "url": "https://ago.mo.gov/get-help/programs-services-from-a-z/landlord-tenant-law/",
+          "jurisdiction": "State of Missouri"
         },
         {
           "category": "Short-term rental",
           "label": "St. Louis short-term rental permits",
-          "url": "https://www.stlouis-mo.gov/government/departments/public-safety/building/permits/short-term-rental-permits/index.cfm"
+          "url": "https://www.stlouis-mo.gov/government/departments/public-safety/building/permits/short-term-rental-permits/index.cfm",
+          "jurisdiction": "City of St. Louis"
         },
         {
           "category": "Short-term rental",
           "label": "St. Louis Ordinance 71940",
-          "url": "https://www.stlouis-mo.gov/government/city-laws/ordinances/ordinance.cfm?ord=71940"
+          "url": "https://www.stlouis-mo.gov/government/city-laws/ordinances/ordinance.cfm?ord=71940",
+          "jurisdiction": "City of St. Louis"
         },
         {
           "category": "HOA/rental limits",
           "label": "Missouri condominium association powers",
-          "url": "https://revisor.mo.gov/main/OneSection.aspx?hlr=y&section=448.3-102"
+          "url": "https://revisor.mo.gov/main/OneSection.aspx?hlr=y&section=448.3-102",
+          "jurisdiction": "State of Missouri"
         }
       ]
     },
@@ -109,35 +121,41 @@
           "level": "high",
           "category": "Short-term rental",
           "title": "Austin STR license risk",
-          "detail": "Austin requires STR licensing and has active enforcement rules. Verify eligibility, local-contact rules, tax reporting, and platform requirements before using STR income."
+          "detail": "Austin requires STR licensing and has active enforcement rules. Verify eligibility, local-contact rules, tax reporting, and platform requirements before using STR income.",
+          "jurisdiction": "City of Austin"
         },
         {
           "level": "medium",
           "category": "HOA/rental limits",
           "title": "Association documents required",
-          "detail": "Texas HOA rights depend heavily on governing documents plus state law. Add HOA documents to the knowledge bank if the property is in an association."
+          "detail": "Texas HOA rights depend heavily on governing documents plus state law. Add HOA documents to the knowledge bank if the property is in an association.",
+          "jurisdiction": "HOA / private documents"
         }
       ],
       "links": [
         {
           "category": "Landlord-tenant",
           "label": "Texas Property Code Chapter 92",
-          "url": "https://statutes.capitol.texas.gov/Docs/PR/htm/PR.92.htm"
+          "url": "https://statutes.capitol.texas.gov/Docs/PR/htm/PR.92.htm",
+          "jurisdiction": "State of Texas"
         },
         {
           "category": "Short-term rental",
           "label": "Austin short-term rentals",
-          "url": "https://www.austintexas.gov/development-services/short-term-rentals"
+          "url": "https://www.austintexas.gov/development-services/short-term-rentals",
+          "jurisdiction": "City of Austin"
         },
         {
           "category": "Short-term rental",
           "label": "Austin STR license application",
-          "url": "https://www.austintexas.gov/services/apply-short-term-rental-license"
+          "url": "https://www.austintexas.gov/services/apply-short-term-rental-license",
+          "jurisdiction": "City of Austin"
         },
         {
           "category": "HOA/rental limits",
           "label": "Texas State Law Library HOA rights",
-          "url": "https://www.sll.texas.gov/faqs/hoa-rights/"
+          "url": "https://www.sll.texas.gov/faqs/hoa-rights/",
+          "jurisdiction": "State of Texas"
         }
       ]
     }
@@ -158,24 +176,29 @@
           "level": "medium",
           "category": "Local rules",
           "title": "City/county STR rules not resolved",
-          "detail": "The state fallback cannot confirm local STR registration, zoning, or inspection rules."
+          "detail": "The state fallback cannot confirm local STR registration, zoning, or inspection rules.",
+          "jurisdiction": "City/county (unresolved)",
+          "fallback_only": true
         }
       ],
       "links": [
         {
           "category": "Landlord-tenant",
           "label": "Indiana IHCDA renter resources",
-          "url": "https://www.in.gov/ihcda/homeowners-and-renters/renters-rights/"
+          "url": "https://www.in.gov/ihcda/homeowners-and-renters/renters-rights/",
+          "jurisdiction": "State of Indiana"
         },
         {
           "category": "Landlord-tenant / rent restrictions",
           "label": "Indiana Code Title 32",
-          "url": "https://iga.in.gov/laws/2025/ic/titles/32"
+          "url": "https://iga.in.gov/laws/2025/ic/titles/32",
+          "jurisdiction": "State of Indiana"
         },
         {
           "category": "Short-term rental",
           "label": "Indianapolis STR permit program example",
-          "url": "https://library.municode.com/in/indianapolis_-_marion_county/codes/code_of_ordinances?nodeId=TITIVBUCORELI_CH852INSHRMREPEPR"
+          "url": "https://library.municode.com/in/indianapolis_-_marion_county/codes/code_of_ordinances?nodeId=TITIVBUCORELI_CH852INSHRMREPEPR",
+          "jurisdiction": "City of Indianapolis / Marion County"
         }
       ]
     },
@@ -194,24 +217,29 @@
           "level": "medium",
           "category": "Local jurisdiction",
           "title": "Municipal rules not resolved",
-          "detail": "Missouri local rental, occupancy, and STR rules can vary by city or municipality."
+          "detail": "Missouri local rental, occupancy, and STR rules can vary by city or municipality.",
+          "jurisdiction": "Local municipality (unresolved)",
+          "fallback_only": true
         }
       ],
       "links": [
         {
           "category": "Landlord-tenant",
           "label": "Missouri Attorney General landlord-tenant law",
-          "url": "https://ago.mo.gov/get-help/programs-services-from-a-z/landlord-tenant-law/"
+          "url": "https://ago.mo.gov/get-help/programs-services-from-a-z/landlord-tenant-law/",
+          "jurisdiction": "State of Missouri"
         },
         {
           "category": "Short-term rental",
           "label": "St. Louis STR permits example",
-          "url": "https://www.stlouis-mo.gov/government/departments/public-safety/building/permits/short-term-rental-permits/index.cfm"
+          "url": "https://www.stlouis-mo.gov/government/departments/public-safety/building/permits/short-term-rental-permits/index.cfm",
+          "jurisdiction": "City of St. Louis"
         },
         {
           "category": "HOA/rental limits",
           "label": "Missouri condominium association powers",
-          "url": "https://revisor.mo.gov/main/OneSection.aspx?hlr=y&section=448.3-102"
+          "url": "https://revisor.mo.gov/main/OneSection.aspx?hlr=y&section=448.3-102",
+          "jurisdiction": "State of Missouri"
         }
       ]
     },
@@ -230,24 +258,29 @@
           "level": "medium",
           "category": "HOA/rental limits",
           "title": "Association documents not reviewed",
-          "detail": "Texas HOA limits often depend on governing documents. Add those files to the knowledge bank if available."
+          "detail": "Texas HOA limits often depend on governing documents. Add those files to the knowledge bank if available.",
+          "jurisdiction": "HOA / private documents",
+          "fallback_only": true
         }
       ],
       "links": [
         {
           "category": "Landlord-tenant",
           "label": "Texas Property Code Chapter 92",
-          "url": "https://statutes.capitol.texas.gov/Docs/PR/htm/PR.92.htm"
+          "url": "https://statutes.capitol.texas.gov/Docs/PR/htm/PR.92.htm",
+          "jurisdiction": "State of Texas"
         },
         {
           "category": "Short-term rental",
           "label": "Austin STR rules example",
-          "url": "https://www.austintexas.gov/development-services/short-term-rentals"
+          "url": "https://www.austintexas.gov/development-services/short-term-rentals",
+          "jurisdiction": "City of Austin"
         },
         {
           "category": "HOA/rental limits",
           "label": "Texas State Law Library HOA rights",
-          "url": "https://www.sll.texas.gov/faqs/hoa-rights/"
+          "url": "https://www.sll.texas.gov/faqs/hoa-rights/",
+          "jurisdiction": "State of Texas"
         }
       ]
     },
@@ -266,29 +299,34 @@
           "level": "high",
           "category": "HOA/rental limits",
           "title": "Association restrictions may be decisive",
-          "detail": "Florida HOA or condo documents can materially limit lease terms, STR use, tenant approval, and rental frequency."
+          "detail": "Florida HOA or condo documents can materially limit lease terms, STR use, tenant approval, and rental frequency.",
+          "jurisdiction": "HOA / private documents"
         }
       ],
       "links": [
         {
           "category": "Landlord-tenant / rent restrictions",
           "label": "Florida Statutes Chapter 83",
-          "url": "https://www.flsenate.gov/Laws/Statutes/2025/Chapter83/All"
+          "url": "https://www.flsenate.gov/Laws/Statutes/2025/Chapter83/All",
+          "jurisdiction": "State of Florida"
         },
         {
           "category": "Short-term rental",
           "label": "Florida vacation rental classification",
-          "url": "https://www.flsenate.gov/Laws/Statutes/2025/0509.242"
+          "url": "https://www.flsenate.gov/Laws/Statutes/2025/0509.242",
+          "jurisdiction": "State of Florida"
         },
         {
           "category": "HOA/rental limits",
           "label": "Florida HOA Act Chapter 720",
-          "url": "https://www.flsenate.gov/Laws/Statutes/2025/Chapter720/All"
+          "url": "https://www.flsenate.gov/Laws/Statutes/2025/Chapter720/All",
+          "jurisdiction": "State of Florida"
         },
         {
           "category": "HOA/rental limits",
           "label": "Florida Condominium Act Chapter 718",
-          "url": "https://www.flsenate.gov/Laws/Statutes/2025/Chapter718/All"
+          "url": "https://www.flsenate.gov/Laws/Statutes/2025/Chapter718/All",
+          "jurisdiction": "State of Florida"
         }
       ]
     }
@@ -308,7 +346,8 @@
         "level": "high",
         "category": "Missing local policy",
         "title": "Local law not resolved",
-        "detail": "The app did not find a state or ZIP policy record. Add local policy notes to the knowledge bank before relying on the report."
+        "detail": "The app did not find a state or ZIP policy record. Add local policy notes to the knowledge bank before relying on the report.",
+        "jurisdiction": "Unknown jurisdiction"
       }
     ],
     "links": []

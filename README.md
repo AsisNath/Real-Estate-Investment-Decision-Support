@@ -31,7 +31,7 @@ This local MVP does not use paid APIs or live real estate data. The sample marke
 2. The frontend sends a JSON request to `POST /api/analyze`.
 3. FastAPI validates the request with Pydantic.
 4. `finance.py` calculates loan, LTV, operating expenses, NOI, cash flow, break-even rent, DSCR, going-in cap rate, cash-on-cash return, 5-year and 10-year IRR, equity multiple, exit cap rate, sales costs, and projected sale proceeds.
-5. `data_loader.py` loads market and policy data by ZIP code, then falls back to state or national sample data if needed.
+5. `data_loader.py` loads market data by ZIP code with state/national fallback, and builds a layered policy context: city/county (ZIP-level), state, and national records are merged so the report covers every jurisdiction level that matches, and each restriction flag and source link is tagged with its jurisdiction (city/county, state, HOA/private).
 6. `data_loader.py` also checks `knowledge_bank` for local `.md` or `.txt` policy files matching the state, ZIP, city, or specific property.
 7. `analysis.py` combines the results into a structured report.
 8. The frontend renders summary cards, projections, risks, opportunities, policy source links, knowledge-bank notes, missing-data flags, and a final recommendation.

@@ -127,7 +127,7 @@ function policyFlags(flags) {
           (flag) => `
             <article class="policy-flag ${flag.level || "medium"}">
               <div>
-                <span>${flag.category}</span>
+                <span>${flag.category}${flag.jurisdiction ? ` &middot; ${flag.jurisdiction}` : ""}</span>
                 <h4>${flag.title}</h4>
               </div>
               ${badge(flag.level || "medium", flag.level || "medium")}
@@ -145,20 +145,32 @@ function sourceLinks(links) {
     return `<p class="muted">No online source links are attached to this policy record. Add local notes to the knowledge bank for this property.</p>`;
   }
 
-  return `
-    <div class="source-links">
-      ${links
-        .map(
-          (link) => `
-            <a href="${link.url}" target="_blank" rel="noopener noreferrer">
-              <span>${link.category}</span>
-              <strong>${link.label}</strong>
-            </a>
-          `
-        )
-        .join("")}
-    </div>
-  `;
+  const groups = new Map();
+  for (const link of links) {
+    const jurisdiction = link.jurisdiction || "Other sources";
+    if (!groups.has(jurisdiction)) groups.set(jurisdiction, []);
+    groups.get(jurisdiction).push(link);
+  }
+
+  return [...groups.entries()]
+    .map(
+      ([jurisdiction, groupLinks]) => `
+        <h5 class="jurisdiction-label">${jurisdiction}</h5>
+        <div class="source-links">
+          ${groupLinks
+            .map(
+              (link) => `
+                <a href="${link.url}" target="_blank" rel="noopener noreferrer">
+                  <span>${link.category}</span>
+                  <strong>${link.label}</strong>
+                </a>
+              `
+            )
+            .join("")}
+        </div>
+      `
+    )
+    .join("");
 }
 
 function knowledgeBankPanel(knowledgeBank) {
@@ -294,6 +306,7 @@ function renderReport(report) {
           <div><dt>Rent restrictions</dt><dd>${report.policy.rent_control_summary}</dd></div>
           <div><dt>Short-term rental</dt><dd>${report.policy.short_term_rental_summary}</dd></div>
           <div><dt>HOA/rental limits</dt><dd>${report.policy.rental_restriction_summary}</dd></div>
+          <div><dt>Jurisdictions reviewed</dt><dd>${(report.policy.jurisdiction_levels || []).join("; ") || report.policy.jurisdiction_name}</dd></div>
           <div><dt>Source</dt><dd>${report.policy.source_label} (${report.policy.confidence} confidence)</dd></div>
         </dl>
       </div>
@@ -303,7 +316,7 @@ function renderReport(report) {
       <div class="section-title">
         <div>
           <h3>Policy Restrictions and Sources</h3>
-          <p>High-attention issues are flagged first. Use the links to verify the current rule before relying on the analysis.</p>
+          <p>City/county, state, HOA/private, and other rules that could affect this investment. High-attention issues are flagged first. Use the links to verify the current rule before relying on the analysis.</p>
         </div>
       </div>
       ${policyFlags(report.policy.restriction_flags)}

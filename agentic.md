@@ -53,6 +53,8 @@ Recent proposal update: created `NorthStar_Property_Investment_Consulting_Propos
 
 Latest proposal update: created `NorthStar_Property_Investment_Consulting_Proposal_AI_Future_Revised.docx`, which adds a clearer "Where AI Helps" section, maps AI contribution by platform/tool, and lists future extensions including hosting the website online, secure document upload, live public-data retrieval, AI document Q&A, scenario comparison, and multi-property comparison.
 
+Week 9 proposal update (2026-07-25): aligned the project with `Week9_DSP_NorthStar_Property_Investment_Consulting_Proposal.docx`. The `property-policy-research` agent Skill is now bundled in the repo at `.claude/skills/property-policy-research/` (it researches STR permits, landlord-tenant law, rent control, and HOA restrictions via live web search and writes dated, source-cited notes into `knowledge_bank/<state>-<zip>/`). `data_loader.py` now also searches the Skill's output folders (`knowledge_bank/state-zip` and `knowledge_bank/state-city_slug`) so generated notes appear in the report, with new tests in `tests/test_data_loader.py`. README and knowledge_bank docs were updated to document the Skill workflow. The project was published to GitHub: https://github.com/AsisNath/Real-Estate-Investment-Decision-Support
+
 ## Known Issues
 FastAPI and pytest may need to be installed in any new local Python environment with `pip install -r requirements.txt`. The current data is sample data, so all market and policy findings should be verified before use.
 

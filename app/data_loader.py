@@ -107,6 +107,7 @@ def load_knowledge_bank_context(address: str, city: str, state: str, zip_code: s
     zip_code = zip_code.strip()
     city_slug = _slug(f"{city}_{state}")
     address_slug = _slug(f"{address}_{zip_code}")
+    state_lower = state.lower()
 
     candidate_dirs = [
         KNOWLEDGE_BANK_DIR / "global",
@@ -114,6 +115,10 @@ def load_knowledge_bank_context(address: str, city: str, state: str, zip_code: s
         KNOWLEDGE_BANK_DIR / "zips" / zip_code,
         KNOWLEDGE_BANK_DIR / "cities" / city_slug,
         KNOWLEDGE_BANK_DIR / "properties" / address_slug,
+        # Folders written by the property-policy-research agent Skill,
+        # e.g. knowledge_bank/tx-78704/policy-notes.md
+        KNOWLEDGE_BANK_DIR / f"{state_lower}-{zip_code}",
+        KNOWLEDGE_BANK_DIR / f"{state_lower}-{_slug(city)}",
     ]
 
     documents: list[dict[str, str]] = []
@@ -138,6 +143,8 @@ def load_knowledge_bank_context(address: str, city: str, state: str, zip_code: s
             "Add local-law, HOA, condo, lease, lender, or rental-policy notes as .md or .txt files "
             "inside knowledge_bank/global, knowledge_bank/states/STATE, knowledge_bank/zips/ZIP, "
             "knowledge_bank/cities/city_state, or knowledge_bank/properties/address_zip. "
+            "Notes can also be generated automatically by the property-policy-research agent Skill, "
+            "which writes source-cited policy notes to knowledge_bank/state-zip (for example tx-78704). "
             "A future hosted version can replace this folder with document upload."
         ),
     }

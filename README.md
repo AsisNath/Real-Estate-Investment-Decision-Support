@@ -103,7 +103,13 @@ python -m pip install -r requirements.txt
 
 Double-click `Run_NorthStar.bat`.
 
-The batch file will create `.venv` if needed, install requirements, run the quick tests, open the browser, and start the local server at `http://127.0.0.1:8000`.
+The batch file will create `.venv` if needed, install requirements, run the quick tests, stop any old NorthStar server still holding port 8000, open the browser, and start the local server at `http://127.0.0.1:8000`.
+
+Stopping the old server matters: a running Python process keeps the code and JSON data it loaded at startup, so a stale server keeps serving old results no matter what changed on disk. To stop one by hand:
+
+```powershell
+Get-NetTCPConnection -LocalPort 8000 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+```
 
 ## Run
 

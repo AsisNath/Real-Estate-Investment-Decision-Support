@@ -68,6 +68,10 @@ if errorlevel 1 (
 )
 
 echo.
+echo Checking port 8000 for an old NorthStar server...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ids = @(Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique); if ($ids.Count -eq 0) { Write-Host '  Port 8000 is free.'; exit }; $stopped = 0; foreach ($id in $ids) { $p = Get-Process -Id $id -ErrorAction SilentlyContinue; if ($p -and $p.ProcessName -like 'python*') { Write-Host ('  Stopping old server: PID ' + $p.Id + ' (started ' + $p.StartTime + ')'); Stop-Process -Id $p.Id -Force; $stopped = $stopped + 1 } elseif ($p) { Write-Host ('  WARNING: port 8000 is used by ' + $p.ProcessName + ' (PID ' + $p.Id + '), which is not a NorthStar server. Close it manually.') } }; if ($stopped -gt 0) { Start-Sleep -Seconds 2; Write-Host '  Old server stopped.' }"
+
+echo.
 echo Starting NorthStar at http://127.0.0.1:8000
 echo Keep this window open while using the app.
 echo Press Ctrl+C in this window to stop the server.

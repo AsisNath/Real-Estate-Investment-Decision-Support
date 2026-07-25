@@ -47,7 +47,7 @@ def sample_properties():
 @app.post("/api/analyze")
 def analyze_property(payload: AnalysisRequest):
     market_context = load_market_context(payload.zip_code, payload.state)
-    policy_context = load_policy_context(payload.zip_code, payload.state)
+    policy_context = load_policy_context(payload.zip_code, payload.state, payload.city)
     knowledge_bank_context = load_knowledge_bank_context(
         payload.address,
         payload.city,

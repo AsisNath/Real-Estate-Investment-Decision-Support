@@ -49,17 +49,30 @@ def load_market_context(zip_code: str, state: str) -> dict[str, Any]:
     return result
 
 
-def _merge_policy_records(records: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def _normalize_city(value: str) -> str:
+    """Normalize a city name for comparison, treating "Saint" and "St." the same."""
+    cleaned = re.sub(r"[^a-z]+", " ", value.lower()).strip()
+    words = ["st" if word == "saint" else word for word in cleaned.split()]
+    return " ".join(words)
+
+
+def _merge_policy_records(
+    records: list[dict[str, Any]],
+    city: str = "",
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Combine restriction flags and source links from every matched jurisdiction level.
 
     Most-specific record first. Duplicates are dropped (same flag title, or same
     link URL + category), and every item keeps a jurisdiction label so the report
-    can group city/county, state, HOA, and other rules.
+    can group city/county, state, HOA, and other rules. Links tagged with
+    applies_to_city belong to one specific city's rules and are skipped unless
+    the analyzed property is in that city.
     """
     flags: list[dict[str, Any]] = []
     links: list[dict[str, Any]] = []
     seen_flags: set[str] = set()
     seen_links: set[tuple[str, str]] = set()
+    city_norm = _normalize_city(city)
 
     for index, record in enumerate(records):
         fallback_jurisdiction = record.get("jurisdiction_name", "Unknown jurisdiction")
@@ -76,18 +89,22 @@ def _merge_policy_records(records: list[dict[str, Any]]) -> tuple[list[dict[str,
             item.setdefault("jurisdiction", fallback_jurisdiction)
             flags.append(item)
         for link in record.get("links", []):
+            applies_to_city = link.get("applies_to_city")
+            if applies_to_city and _normalize_city(applies_to_city) != city_norm:
+                continue
             key = (link["url"], link.get("category", ""))
             if key in seen_links:
                 continue
             seen_links.add(key)
             item = dict(link)
+            item.pop("applies_to_city", None)
             item.setdefault("jurisdiction", fallback_jurisdiction)
             links.append(item)
 
     return flags, links
 
 
-def load_policy_context(zip_code: str, state: str) -> dict[str, Any]:
+def load_policy_context(zip_code: str, state: str, city: str = "") -> dict[str, Any]:
     """Build a layered policy context covering every jurisdiction level that matches.
 
     The most specific record (ZIP-level, which represents the city/county rules)
@@ -111,9 +128,12 @@ def load_policy_context(zip_code: str, state: str) -> dict[str, Any]:
             result["match_level"] = "zip"
             result["missing_data_flags"] = []
         else:
+            place = f"{city.strip()}, {state}" if city.strip() else f"ZIP {zip_code}"
             result["match_level"] = "state"
             result["missing_data_flags"] = [
-                "Address-specific rental rules and HOA restrictions were not found. Verify city, county, and HOA documents."
+                f"No city or county policy record was found for {place}. "
+                f"The rules below are {state} state-level only — city, county, and HOA "
+                "requirements for this address still need to be verified."
             ]
     else:
         matched.append(data["national_default"])
@@ -123,7 +143,7 @@ def load_policy_context(zip_code: str, state: str) -> dict[str, Any]:
             "Local policy data was not found. Treat this as a due-diligence gap."
         ]
 
-    flags, links = _merge_policy_records(matched)
+    flags, links = _merge_policy_records(matched, city)
     result["restriction_flags"] = flags
     result["links"] = links
     result["jurisdiction_levels"] = [

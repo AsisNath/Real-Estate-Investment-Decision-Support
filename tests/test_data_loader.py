@@ -20,6 +20,33 @@ def test_policy_context_merges_city_and_state_levels():
     )
 
 
+def test_state_fallback_hides_other_city_example_links():
+    # Saint Charles, MO (ZIP 63301) is not St. Louis, so the state fallback
+    # must not surface the City of St. Louis STR example link.
+    context = data_loader.load_policy_context("63301", "MO", "Saint Charles")
+
+    assert context["match_level"] == "state"
+    labels = [link["label"] for link in context["links"]]
+    assert "St. Louis STR permits example" not in labels
+    assert "Missouri Attorney General landlord-tenant law" in labels
+
+
+def test_state_fallback_keeps_matching_city_example_links():
+    # A St. Louis property with an unlisted ZIP should still get the city link,
+    # whether the user types "Saint Louis" or "St. Louis".
+    for spelling in ("Saint Louis", "St. Louis", "st louis"):
+        context = data_loader.load_policy_context("63110", "MO", spelling)
+        labels = [link["label"] for link in context["links"]]
+        assert "St. Louis STR permits example" in labels, spelling
+
+
+def test_city_normalization():
+    assert data_loader._normalize_city("Saint Charles") == "st charles"
+    assert data_loader._normalize_city("St. Louis") == "st louis"
+    assert data_loader._normalize_city("SAINT LOUIS") == "st louis"
+    assert data_loader._normalize_city("Indianapolis") == "indianapolis"
+
+
 def test_state_fallback_keeps_unresolved_local_warning():
     context = data_loader.load_policy_context("47401", "IN")
 
@@ -50,6 +77,14 @@ def test_policy_context_state_fallback():
     assert context["match_level"] == "state"
     assert context["missing_data_flags"]
     assert context["jurisdiction_levels"] == ["Florida state-level fallback"]
+
+
+def test_state_fallback_message_names_the_city():
+    context = data_loader.load_policy_context("63301", "MO", "Saint Charles")
+
+    message = context["missing_data_flags"][0]
+    assert "Saint Charles, MO" in message
+    assert "state-level only" in message
 
 
 def test_policy_context_national_fallback():

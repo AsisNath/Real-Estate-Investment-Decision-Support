@@ -198,7 +198,8 @@
           "category": "Short-term rental",
           "label": "Indianapolis STR permit program example",
           "url": "https://library.municode.com/in/indianapolis_-_marion_county/codes/code_of_ordinances?nodeId=TITIVBUCORELI_CH852INSHRMREPEPR",
-          "jurisdiction": "City of Indianapolis / Marion County"
+          "jurisdiction": "City of Indianapolis / Marion County",
+          "applies_to_city": "indianapolis"
         }
       ]
     },
@@ -233,7 +234,8 @@
           "category": "Short-term rental",
           "label": "St. Louis STR permits example",
           "url": "https://www.stlouis-mo.gov/government/departments/public-safety/building/permits/short-term-rental-permits/index.cfm",
-          "jurisdiction": "City of St. Louis"
+          "jurisdiction": "City of St. Louis",
+          "applies_to_city": "st louis"
         },
         {
           "category": "HOA/rental limits",
@@ -274,7 +276,8 @@
           "category": "Short-term rental",
           "label": "Austin STR rules example",
           "url": "https://www.austintexas.gov/development-services/short-term-rentals",
-          "jurisdiction": "City of Austin"
+          "jurisdiction": "City of Austin",
+          "applies_to_city": "austin"
         },
         {
           "category": "HOA/rental limits",

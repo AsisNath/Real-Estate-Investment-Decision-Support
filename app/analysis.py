@@ -127,7 +127,7 @@ def build_report(
     knowledge_bank_context: dict[str, Any],
     location_check: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    assumptions = request.dict()
+    assumptions = request.model_dump()
     metrics = analyze_investment(assumptions)
     location_check = location_check or {"status": "unverified", "warnings": [], "unverified": []}
     location_mismatch = location_check.get("status") == "warning"

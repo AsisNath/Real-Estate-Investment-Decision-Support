@@ -562,6 +562,38 @@ select:focus {
   color: #39433d;
 }
 
+.location-notice {
+  margin-top: 12px;
+  padding: 11px 13px;
+  border: 1px solid #e6c06a;
+  border-left: 5px solid var(--amber);
+  border-radius: 8px;
+  background: #fffdf5;
+  font-size: 13px;
+}
+
+.location-notice.mismatch {
+  border-color: #eaa9a2;
+  border-left-color: var(--red);
+  background: #fff8f7;
+}
+
+.location-notice strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.location-notice ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.location-notice li + li {
+  margin-top: 4px;
+}
+
 .location-check {
   margin-bottom: 16px;
   padding: 15px 17px;

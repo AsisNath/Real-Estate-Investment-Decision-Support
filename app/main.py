@@ -15,7 +15,7 @@ from app.data_loader import (
     load_policy_context,
     load_sample_properties,
 )
-from app.schemas import AnalysisRequest, HealthResponse
+from app.schemas import AnalysisRequest, HealthResponse, LocationCheckRequest
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,6 +43,12 @@ def health():
 @app.get("/api/sample-properties")
 def sample_properties():
     return {"properties": load_sample_properties()}
+
+
+@app.post("/api/location-check")
+def location_check(payload: LocationCheckRequest):
+    """Check city/state/ZIP agreement while the user is still filling the form."""
+    return check_location_consistency(payload.city, payload.state, payload.zip_code)
 
 
 @app.post("/api/analyze")

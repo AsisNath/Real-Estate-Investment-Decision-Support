@@ -27,6 +27,14 @@ class AnalysisRequest(BaseModel):
     selling_cost_percent: float = Field(6, ge=0, le=15)
 
 
+class LocationCheckRequest(BaseModel):
+    """Loose validation on purpose: the point is to report bad input, not reject it."""
+
+    city: str = ""
+    state: str = ""
+    zip_code: str = ""
+
+
 class HealthResponse(BaseModel):
     status: str
     app: str

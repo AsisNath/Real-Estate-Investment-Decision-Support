@@ -65,6 +65,61 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+const locationNotice = document.querySelector("#locationNotice");
+
+function renderLocationNotice(check) {
+  if (!check || check.status === "ok") {
+    locationNotice.classList.add("hidden");
+    locationNotice.innerHTML = "";
+    return;
+  }
+
+  const isWarning = check.status === "warning";
+  const messages = isWarning ? check.warnings : check.unverified;
+  if (!messages || messages.length === 0) {
+    locationNotice.classList.add("hidden");
+    locationNotice.innerHTML = "";
+    return;
+  }
+
+  locationNotice.className = `location-notice ${isWarning ? "mismatch" : "unverified"}`;
+  locationNotice.innerHTML = `
+    <strong>${isWarning ? "City, state, and ZIP do not match" : "Could not fully verify this address"}</strong>
+    <ul>${messages.map((message) => `<li>${escapeHtml(message)}</li>`).join("")}</ul>
+  `;
+}
+
+async function checkLocationFields() {
+  const city = form.elements.namedItem("city").value.trim();
+  const state = form.elements.namedItem("state").value.trim();
+  const zipCode = form.elements.namedItem("zip_code").value.trim();
+
+  // Wait until all three fields are filled in before judging them.
+  if (!city || state.length < 2 || zipCode.length < 5) {
+    renderLocationNotice(null);
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/location-check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ city, state: state.toUpperCase(), zip_code: zipCode }),
+    });
+    if (!response.ok) return;
+    renderLocationNotice(await response.json());
+  } catch (error) {
+    // A failed check must never block the form.
+    renderLocationNotice(null);
+  }
+}
+
+["city", "state", "zip_code"].forEach((name) => {
+  const input = form.elements.namedItem(name);
+  input.addEventListener("change", checkLocationFields);
+  input.addEventListener("blur", checkLocationFields);
+});
+
 function collectPayload() {
   const data = new FormData(form);
   const payload = {};
@@ -445,6 +500,7 @@ async function loadSamples() {
       const input = form.elements.namedItem(key);
       if (input) input.value = value;
     });
+    checkLocationFields();
   });
 }
 
@@ -480,3 +536,4 @@ form.addEventListener("submit", async (event) => {
 });
 
 loadSamples();
+checkLocationFields();

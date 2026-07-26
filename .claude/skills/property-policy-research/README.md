@@ -35,6 +35,12 @@ property-policy-research/          ← the Skill (this is what you install)
 └── Property-Policy-Brief-LA-90026.html  ← example polished investor brief
 ```
 
+> **This project's copy** (`.claude/skills/property-policy-research/` in NorthStar)
+> is just the Skill itself — `SKILL.md` and `references/`. The example outputs
+> above shipped with the standalone Lab 5 package; in NorthStar, real researched
+> notes for the same three markets live at the project root in
+> `knowledge_bank/zips/{78704,90026,11215}/policy-notes.md` instead.
+
 ---
 
 ## Using it with Claude (Claude Code / Cowork / claude.ai)
@@ -87,7 +93,7 @@ Slope, Brooklyn?"* — the Skill triggers automatically. Make sure **web search 
 enabled** for the conversation.
 
 **Cowork note:** Cowork works inside a folder you point it at. Open it on the
-folder where you want results, and the `knowledge_bank/<state>-<zip>/policy-notes.md`
+folder where you want results, and the `knowledge_bank/zips/<zip>/policy-notes.md`
 output lands there. In claude.ai (no file system), the policy note is produced
 as a document in the chat instead — same content, no saved file.
 

@@ -1,101 +1,157 @@
 # NorthStar Property Investment Consulting
 
-NorthStar is a local real estate investment decision-support tool. It lets a user enter a mainland U.S. property address and investment assumptions, then returns a structured investor report with financial metrics, local sample market context, policy/rental restriction warnings, risks, opportunities, and a final recommendation: **Buy**, **Investigate Further**, or **Reject**.
+NorthStar is a local web app that helps an individual investor decide whether to buy a specific U.S. residential rental property. Enter an address and your investment assumptions, and it returns an investor report covering financial metrics, market context, local policy and rental restrictions, risks, opportunities, and a final recommendation: **Buy**, **Investigate Further**, or **Reject**.
 
-This local MVP does not use paid APIs or live real estate data. The sample market and policy data are stored in local JSON files so the demo is reliable. Live policy research is handled outside the app runtime by the reusable `property-policy-research` agent Skill (see below), so the demo stays fully reliable offline.
+The app runs entirely on your machine and uses no paid APIs, no scraping, and no live data at analysis time. Market and policy samples live in local JSON; local rules you have researched live in the `knowledge_bank/` folder. Live research happens outside the app through the `property-policy-research` agent Skill, which keeps the app itself deterministic and reliable offline.
 
 > Design Studio Project | BUKD-X500: Agentic AI Systems | Kelley School of Business
 > Team 5: Ashish Nath, Justin Kretschman
-> Full proposal: [Week9_DSP_NorthStar_Property_Investment_Consulting_Proposal.docx](Week9_DSP_NorthStar_Property_Investment_Consulting_Proposal.docx)
+> Proposal: [Week9_DSP_NorthStar_Property_Investment_Consulting_Proposal.docx](Week9_DSP_NorthStar_Property_Investment_Consulting_Proposal.docx)
+
+---
+
+## Quick start
+
+Double-click **`Run_NorthStar.bat`**. It creates `.venv` if needed, installs requirements, runs the tests, stops any old NorthStar server still holding port 8000, opens your browser, and starts the app at `http://127.0.0.1:8000`.
+
+Or set it up by hand:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+Two pages:
+
+| Page | What it is for |
+|---|---|
+| `http://localhost:8000` | Analyze a property and read the investor report |
+| `http://localhost:8000/knowledge-bank` | Browse policy notes, add your own, inspect the analysis trail |
+
+**If a change does not appear**, an old server process is probably still running. A running Python process keeps the code and data it loaded at startup. The launcher now clears port 8000 for you; to do it by hand:
+
+```powershell
+Get-NetTCPConnection -LocalPort 8000 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+```
+
+---
+
+## What the report contains
+
+**Financial metrics**, all from a deterministic, unit-tested Python model — never from an LLM:
+
+Net Operating Income (NOI), monthly and annual cash flow, break-even rent, Debt Service Coverage Ratio (DSCR), going-in cap rate, Cash-on-Cash return, Loan-to-Value (LTV), 5-year and 10-year IRR, equity multiple, final-year NOI, exit cap rate, loan balance, sales costs, total cash returned, and net sale proceeds. Growth and inflation assumptions are shown separately so the deal can be stress-tested.
+
+**Policy and risk sections**, drawn from the sample records and your knowledge bank:
+
+- **Policy Restrictions and Sources** — flags and official source links grouped by jurisdiction (city/county, state, HOA/private)
+- **Assumptions the Local Rules Do Not Support** — assumptions that exceed a limit recorded in a policy note
+- **Diligence Checklist** — open questions the notes say must be confirmed before closing
+- **Risks and Opportunities**, missing-data flags, and the final recommendation with its reasons
+
+---
 
 ## Architecture
 
-- `app/main.py`: FastAPI app, page routes, health endpoint, sample property endpoint, location-check endpoint, knowledge-bank endpoints, analysis endpoint.
-- `app/knowledge_bank.py`: scanning, parsing, rendering, and writing knowledge-bank notes.
-- `app/schemas.py`: Pydantic request validation.
-- `app/finance.py`: deterministic financial model, return metrics, projection metrics, and recommendation rules.
-- `app/data_loader.py`: local JSON data loading and fallback logic.
-- `app/analysis.py`: combines finance, market data, policy data, risks, opportunities, and final report.
-- `data/`: sample market, policy, and property records, plus `zip_directory.json` for city/state/ZIP consistency checks.
-- `knowledge_bank/`: local folder for HOA rules, city policy notes, rental law notes, lease restrictions, or other manual due-diligence files.
-- `templates/index.html`: dashboard page.
-- `static/app.js`: form handling and report rendering.
-- `static/styles.css`: business dashboard styling.
-- `tests/test_finance.py`: unit tests for financial calculations and recommendation logic.
-- `tests/test_data_loader.py`: unit tests for policy layering, location checks, and knowledge-bank discovery.
-- `tests/test_api.py`: endpoint tests for the location check and analysis routes.
-- `.claude/skills/property-policy-research/`: reusable agent Skill that researches live rental policy for an address and writes source-cited notes into `knowledge_bank/`.
-- `agentic.md`: AI project memory for future work sessions.
+| File | Role |
+|---|---|
+| `app/main.py` | FastAPI app, page routes, and the JSON API |
+| `app/schemas.py` | Pydantic request validation |
+| `app/finance.py` | Deterministic financial model and recommendation rules |
+| `app/data_loader.py` | Local JSON loading, jurisdiction layering, address checks, knowledge-bank discovery |
+| `app/knowledge_bank.py` | Scanning, parsing, rendering, and writing knowledge-bank notes |
+| `app/analysis.py` | Assembles the report: finance, market, policy, conflicts, risks, recommendation |
+| `data/` | Sample market, policy, and property records, plus `zip_directory.json` for address checks |
+| `knowledge_bank/` | Your local policy library — see [its README](knowledge_bank/README.md) |
+| `templates/`, `static/` | Analysis dashboard and Knowledge Bank pages |
+| `.claude/skills/property-policy-research/` | The research Skill bundled with the project |
+| `tests/` | 80 tests across 6 files |
+| `agentic.md` | AI project memory for future work sessions |
 
-## Data Flow
+### Data flow
 
-1. The browser form collects property and investment assumptions.
-2. The frontend sends a JSON request to `POST /api/analyze`.
-3. FastAPI validates the request with Pydantic, then `check_location_consistency` verifies that the city, state, and ZIP describe the same place using `data/zip_directory.json`. A mismatch produces a warning banner at the top of the report, a high risk entry, and counts against a confident recommendation. The same check also runs live on the form through `POST /api/location-check`, so a mismatch appears under the property fields before the user clicks Analyze.
-4. `finance.py` calculates loan, LTV, operating expenses, NOI, cash flow, break-even rent, DSCR, going-in cap rate, cash-on-cash return, 5-year and 10-year IRR, equity multiple, exit cap rate, sales costs, and projected sale proceeds.
-5. `data_loader.py` loads market data by ZIP code with state/national fallback, and builds a layered policy context: city/county (ZIP-level), state, and national records are merged so the report covers every jurisdiction level that matches, and each restriction flag and source link is tagged with its jurisdiction (city/county, state, HOA/private). City-specific example links inside a state record are only shown when the analyzed city matches, so a Saint Charles property never displays St. Louis rules.
-6. `data_loader.py` also checks `knowledge_bank` for local `.md` or `.txt` policy files matching the state, ZIP, city, or specific property.
-7. `analysis.py` combines the results into a structured report.
-8. The frontend renders summary cards, projections, risks, opportunities, policy source links, knowledge-bank notes, missing-data flags, and a final recommendation.
+1. The browser form collects the property and assumptions and posts to `POST /api/analyze`.
+2. Pydantic validates the request, so bad input is caught before any analysis runs.
+3. `check_location_consistency` confirms the city, state, and ZIP describe the same place. This also runs live on the form while you type, via `POST /api/location-check`.
+4. `finance.py` computes every metric deterministically.
+5. `data_loader.py` loads market data by ZIP with state and national fallback, and builds a **layered** policy context — city/county, state, and national records are merged so the report shows every jurisdiction that applies, each tagged with its source.
+6. `data_loader.py` reads every `knowledge_bank/` folder that matches the property, parsing flags, machine-readable limits, and diligence items out of the notes.
+7. `analysis.py` assembles the report, including conflicts between your assumptions and the limits the notes record.
+8. `record_analysis` appends what was used to that ZIP's analysis trail.
+9. The frontend renders the dashboard.
 
-## Knowledge Bank
+### API
 
-Until document upload is added, put manual policy and restriction files in `knowledge_bank`.
+| Endpoint | Purpose |
+|---|---|
+| `GET /` , `GET /knowledge-bank` | The two pages |
+| `POST /api/analyze` | Run an analysis and return the report |
+| `POST /api/location-check` | Check city/state/ZIP agreement while the form is being filled |
+| `GET /api/sample-properties` | Sample scenarios for the "Load sample" menu |
+| `GET /api/knowledge-bank` | Inventory of every note and trail file |
+| `GET /api/knowledge-bank/note?path=` | One note, rendered as HTML |
+| `GET /api/knowledge-bank/trace?path=` | One analysis trail |
+| `POST /api/knowledge-bank/notes` | Save a note the user wrote |
+| `GET /api/health` | Health check |
 
-Useful files include:
+---
 
-- HOA declarations or rental caps
-- Condo rules
-- Deed restrictions
-- City rental registration notes
-- Short-term rental permit notes
-- Local landlord-tenant law notes
-- Lender or lease restrictions
+## The knowledge bank
 
-NorthStar reads `.md` and `.txt` files from:
+### The Skill versus the folder
 
-```text
-knowledge_bank/global                    every property
-knowledge_bank/states/STATE              any property in that state
-knowledge_bank/zips/ZIP                  that ZIP
-knowledge_bank/cities/city_state         that city
-knowledge_bank/properties/address_zip    one specific address
-```
-
-Folders run broad to specific and are created on demand, so only folders holding a note exist. Older flat `state-zip` folders (for example `tx-78704`) are still read, so notes written by the standalone Lab 5 Skill keep working.
-
-Example:
-
-```text
-knowledge_bank/properties/725_n_delaware_st_46202/hoa_restrictions.md
-```
-
-## The Skill Versus the Knowledge Bank
-
-Two different things, easy to confuse:
+These are two different things:
 
 - **`property-policy-research`** (in `.claude/skills/`) is a **Skill** — instructions an AI agent follows. It researches rental rules on the live web and **writes** notes. You run it in Claude Code, Cowork, or claude.ai.
 - **`knowledge_bank/`** is a **folder of files**. The app **reads** it and never writes policy into it.
 
-Files get in three ways — through the Skill, through the app's Knowledge Bank page, or by dropping a file in by hand. The app cannot tell them apart. See [knowledge_bank/README.md](knowledge_bank/README.md) for the full explanation.
+**The Skill writes; the app reads.** The app never goes online — it reads whatever files are in the folder when you click Analyze.
 
-## Traceability: the analysis trail
+### Three ways notes get in
 
-Every analysis appends a record to `knowledge_bank/zips/<ZIP>/_analysis-log.md` capturing the address, the recommendation, which market and policy records matched, which notes were read, and which flags fired. Open the folder for a ZIP months later and you can see exactly what produced a past recommendation.
+1. **The research Skill** — ask Claude *"Run policy diligence on 250 5th Ave, Brooklyn, NY 11215"* and it researches the rules, verifies them against official `.gov` sources, and writes a dated, cited note.
+2. **The Knowledge Bank page** — use the "Add a local policy note" form, choose where it applies, paste your text, save.
+3. **By hand** — drop a `.md` or `.txt` file into the right folder.
 
-Files beginning with `_` are written by the app and are never read back into a report, so the trail can never feed the analysis its own output. Trails are git-ignored — they are your run history, not project source.
+All three are equivalent; the app cannot tell them apart.
 
-## Knowledge Bank Page
+### Folder layout
 
-`http://localhost:8000/knowledge-bank` is a browsable library of every policy note the project holds. It is built by scanning the folder at request time, so anything added — by the research Skill, by the in-app form, or by dropping a file in — appears immediately.
+Folders run broad to specific, and a property picks up every folder that matches it:
 
-Each note shows where it applies, when it was researched, how many high-attention flags it carries, how many citations are official versus secondary, and how many diligence follow-ups it raises. Notes older than 120 days are marked stale. Clicking through renders the full note as HTML, so the official `.gov` source links are clickable instead of buried in a text dump.
+```text
+knowledge_bank/
+├── global/                          every property
+├── states/NY/                       any property in New York
+├── zips/11215/                      that ZIP
+├── cities/brooklyn_ny/              that city
+└── properties/250_5th_ave_11215/    one specific address
+```
 
-The same page has an **Add a local policy note** form. Pick where the note applies (ZIP, state, city, a single property, everywhere, or a custom folder), paste the text, and save — the file is written into `knowledge_bank/` and picked up by the next analysis. See [knowledge_bank/README.md](knowledge_bank/README.md) for the optional sections that let a note raise risk flags or correct the financial model.
+Folders are created on demand, so only ones holding a note exist. Older flat `<state>-<zip>/` folders are still read, so notes from the standalone Lab 5 Skill keep working.
 
-## Notes That Correct the Financial Model
+### The Knowledge Bank page
 
-A note may declare machine-readable limits:
+`http://localhost:8000/knowledge-bank` scans the folder at request time, so anything added appears immediately. Each note shows where it applies, when it was researched, its flag counts by severity, how many citations are official versus secondary, and how many diligence items it raises. Notes older than 120 days are marked stale. Clicking through renders the note as HTML, so official source links are clickable.
+
+### What makes a note do more than display
+
+Any note is shown in the report. Two optional sections give it teeth.
+
+**A high-attention flags table** — rows appear in Policy Restrictions and Sources, and every HIGH row becomes a risk that can change the recommendation:
+
+```markdown
+## 5. High-Attention Flags (summary for NorthStar report)
+
+| Flag | Severity | Why |
+|---|---|---|
+| HOA rental cap may be full | HIGH | The unit may not be rentable this year |
+```
+
+**A machine-readable summary** — these values are checked against your own assumptions, so a note can correct the financial model:
 
 ```markdown
 ## NorthStar Machine-Readable Summary
@@ -104,103 +160,84 @@ A note may declare machine-readable limits:
 - short_term_rental_allowed: false
 ```
 
-NorthStar checks those against the assumptions entered. Analyzing the Brooklyn sample with 3% rent growth opens the report with a red panel: the Rent Guidelines Board froze stabilized leases at 0%, so the IRR and equity multiple below assume growth the law does not permit. This is the knowledge bank reaching into the deterministic model rather than sitting beside it as commentary.
+Analyze the Brooklyn sample with 3% rent growth and the report opens with a red panel: the Rent Guidelines Board froze stabilized leases at 0%, so the IRR and equity multiple below assume growth the law does not permit. This is the knowledge bank reaching into the deterministic model rather than sitting beside it as commentary.
 
-Notes also feed a **Diligence Checklist** in the report, built from their "unverified / confirm with / obtain" lines, each labeled with the note it came from.
+Notes are also scanned for "unverified / confirm with / obtain" lines, which become the report's **Diligence Checklist**.
 
-## Bundled Researched Policy Notes
+### Bundled researched notes
 
-Three notes produced by the research Skill ship with the project and are read automatically when the matching property is analyzed:
+Three notes produced by the Skill ship with the project:
 
 | Note | Market | Why it is interesting |
 |---|---|---|
-| `knowledge_bank/zips/78704/policy-notes.md` | Austin, TX | STR legal with a license; no rent control statewide |
-| `knowledge_bank/zips/90026/policy-notes.md` | Los Angeles, CA | STR effectively banned for investors; two overlapping rent-control regimes |
-| `knowledge_bank/zips/11215/policy-notes.md` | Brooklyn, NY | STR blocked by Local Law 18; rent freeze adopted for stabilized units |
+| `zips/78704/policy-notes.md` | Austin, TX | STR legal with a license; no rent control statewide |
+| `zips/90026/policy-notes.md` | Los Angeles, CA | STR effectively banned for investors; two overlapping rent-control regimes |
+| `zips/11215/policy-notes.md` | Brooklyn, NY | STR blocked by Local Law 18; rent freeze for stabilized units |
 
-Each note ends with a `| Flag | Severity | Why |` table. NorthStar parses that table and feeds the findings into the report: the flags appear in **Policy Restrictions and Sources** tagged with the researched jurisdiction, every HIGH flag becomes a risk entry naming its source file, and a HIGH flag raises the overall policy risk, which can change the recommendation. Los Angeles and Brooklyn have no built-in sample policy record at all, so those reports are driven entirely by the researched notes — which is the knowledge bank doing exactly the job the proposal describes.
+Los Angeles and Brooklyn have no built-in sample policy record, so those reports are driven entirely by the researched notes — the knowledge bank doing exactly the job the proposal describes.
 
-Use the "Load sample" menu to try them: the Los Angeles and Brooklyn samples both surface researched policy findings.
+### Traceability: the analysis trail
 
-## Policy Research Skill (agent)
+Every analysis appends a record to `knowledge_bank/zips/<ZIP>/_analysis-log.md` — the address, the recommendation, which market and policy records matched, which notes were read, the address check, the flags applied, and any assumption conflicts. Open a ZIP's folder months later and you can see exactly what produced a past recommendation. Trails also appear in their own section on the Knowledge Bank page.
 
-The project includes a reusable agent Skill, `property-policy-research` (in `.claude/skills/`), that automates first-pass policy diligence. Given an address, it web-searches short-term rental permit rules, state landlord-tenant law, rent control status, and HOA rental restrictions, verifies findings against official `.gov` sources, and writes dated, source-cited notes to `knowledge_bank/<state>-<zip>/policy-notes.md`. Every fact carries a source link, an "as of" date, and an official-vs-secondary tag.
+Files beginning with `_` are written by the app and are **never read back into a report**, so a trail can never feed the analysis its own output. Trails are git-ignored: they are your run history, not project source.
 
-The Skill runs outside the app runtime (in Claude Code, Cowork, or claude.ai with web search enabled), so the app itself stays offline and deterministic. On the next analysis of that address, the app surfaces the generated notes in the report's knowledge-bank section. See `.claude/skills/property-policy-research/README.md` for installation and usage on other platforms.
+### The research Skill in detail
 
-## Investor Metrics Included
+Given an address, the Skill web-searches short-term rental permit rules, state landlord–tenant law, rent control status, and HOA rental restrictions; verifies findings against official `.gov` sources; and writes a note to `knowledge_bank/zips/<zip>/policy-notes.md`. Every fact carries a source link, an "as of" date, and an official-versus-secondary tag. When an official source and a third-party guide disagree, the official source wins.
 
-The report includes:
+It runs outside the app, in any agent with web search and file access. See [the Skill's README](.claude/skills/property-policy-research/README.md) for setup on Claude Code, Cowork, claude.ai, and Codex.
 
-- Debt Service Coverage Ratio (DSCR)
-- Net Operating Income (NOI)
-- Cash-on-Cash (CoC) Return
-- Equity Multiple for 5-year and 10-year holding periods
-- Growth and inflation assumptions
-- Sales costs and closing costs
-- Holding-period projections
-- Going-in capitalization rate and exit capitalization rate
-- Loan-to-Value (LTV) ratio
+---
 
-## Setup
+## Address consistency checking
 
-From the project folder:
+Because market and policy lookups key off the ZIP, a typo would otherwise produce a confident report for the wrong place. NorthStar checks all three address fields against `data/zip_directory.json`:
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
+- **State versus ZIP** — a ZIP-prefix table covering the mainland U.S., so this works even for ZIPs not in the sample data
+- **City versus ZIP** — checked against a built-in place directory; "Saint" and "St." are treated as the same word
+- **Malformed ZIPs** — anything that is not five digits
 
-## One-Click Run
+A mismatch appears under the property fields as you type, again as a banner above the recommendation, and as a high-severity risk that counts against a confident result. Checks that cannot be made are reported as *unverified* rather than quietly passing.
 
-Double-click `Run_NorthStar.bat`.
+---
 
-The batch file will create `.venv` if needed, install requirements, run the quick tests, stop any old NorthStar server still holding port 8000, open the browser, and start the local server at `http://127.0.0.1:8000`.
+## Demo suggestions
 
-Stopping the old server matters: a running Python process keeps the code and JSON data it loaded at startup, so a stale server keeps serving old results no matter what changed on disk. To stop one by hand:
+Use the **Load sample** menu:
 
-```powershell
-Get-NetTCPConnection -LocalPort 8000 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
-```
+| Sample | What it shows |
+|---|---|
+| Indianapolis | A stronger deal; city and state policy records layered together |
+| St. Louis | Older-home diligence case |
+| Austin | High price with policy risk; researched note merges with built-in records |
+| Los Angeles | Report driven entirely by a researched note; STR ban and RSO rent cap |
+| Brooklyn | Rent-freeze conflict — raise rent growth above 0% to trigger the guardrail |
 
-## Run
+You can also type any address. If the ZIP is not in the sample data, NorthStar falls back to state or national records and says so plainly.
 
-```powershell
-uvicorn app.main:app --reload
-```
+---
 
-Open:
-
-```text
-http://localhost:8000
-```
-
-## Test
+## Testing
 
 ```powershell
 pytest
 ```
 
-## Demo Suggestions
+80 tests across six files: the financial model and recommendation rules, jurisdiction layering and address checks, note parsing and rendering, note writing (including path-traversal and overwrite cases), the analysis trail, and the API endpoints.
 
-Use the "Load sample" menu to quickly populate a scenario:
+---
 
-- Indianapolis sample: stronger deal that should produce a Buy recommendation.
-- St. Louis sample: older-home diligence case.
-- Austin sample: high-price caution case with policy risk.
+## Future extensions
 
-You can also type any address, city, state, and ZIP. If the ZIP is not in the local sample data, NorthStar will use fallback data and clearly flag the missing local information.
+- Host the app so it is reachable online instead of locally
+- Upload of source documents (PDF HOA declarations, leases, inspection reports) with AI-assisted document Q&A — the current form accepts pasted text notes
+- Live public-data retrieval for market rents, property taxes, and zoning through paid APIs
+- Scenario comparison for best/base/worst cases and sensitivity analysis
+- Multi-property comparison to rank candidates side by side
 
-## Future Extensions
+---
 
-- Host the full website on a server or cloud platform for online access.
-- Secure document upload for HOA declarations, leases, local ordinances, lender terms, and inspection reports, with AI-assisted document Q&A.
-- Live public-data retrieval for market rents, property taxes, insurance assumptions, and zoning through paid APIs.
-- Scenario comparison for best/base/worst cases, multiple financing structures, and sensitivity analysis.
-- Multi-property comparison so investors can rank several candidate properties side by side.
+## Responsible use
 
-## Responsible Use
-
-NorthStar is a decision-support tool, not licensed legal, tax, financial, or investment advice. All public data and policy summaries must be verified before a real purchase decision. Policy notes generated by the research Skill separate officially verified facts from secondary sources — anything tagged secondary should be confirmed with the issuing authority.
+NorthStar is a decision-support tool, not licensed legal, tax, financial, or investment advice. Sample market and policy data must be verified before any real purchase decision. Notes produced by the research Skill separate officially verified facts from secondary sources — anything tagged secondary should be confirmed with the issuing authority before you rely on it.

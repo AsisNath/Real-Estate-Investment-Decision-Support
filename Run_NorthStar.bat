@@ -27,12 +27,29 @@ if errorlevel 1 (
     set "PYTHON_CMD=py -3"
 )
 
+if exist ".venv" (
+    if not exist ".venv\Scripts\python.exe" (
+        echo The .venv folder exists but looks incomplete or corrupted - rebuilding it...
+        rmdir /s /q ".venv"
+    ) else if not exist ".venv\pyvenv.cfg" (
+        echo The .venv folder exists but is missing pyvenv.cfg - rebuilding it...
+        rmdir /s /q ".venv"
+    )
+)
+
 if not exist ".venv\Scripts\python.exe" (
     echo Creating local virtual environment...
     %PYTHON_CMD% -m venv .venv
     if errorlevel 1 (
         echo.
         echo ERROR: Could not create the virtual environment.
+        pause
+        exit /b 1
+    )
+    if not exist ".venv\pyvenv.cfg" (
+        echo.
+        echo ERROR: The virtual environment was created but still looks incomplete.
+        echo Delete the .venv folder by hand and run this file again.
         pause
         exit /b 1
     )

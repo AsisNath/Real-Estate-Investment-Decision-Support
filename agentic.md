@@ -35,7 +35,9 @@ Flow: form -> `POST /api/analyze` -> Pydantic -> address check -> finance -> mar
 
 ## How the knowledge bank works
 
-`property-policy-research` (the Skill, in `.claude/skills/`) **writes** notes; the app only **reads** them. Notes also arrive from the in-app form (`POST /api/knowledge-bank/notes`) or by hand - the app cannot tell the difference. The Skill cannot run inside the app itself: it needs an LLM agent loop with live web search, a different runtime than this deterministic FastAPI process, and calling out to one at request time would break the proposal's offline MVP commitment. What the app does instead: `build_research_request` in `analysis.py` builds a ready-to-paste command from the address already on the form (`"Run policy diligence on {address}, {city}, {state} {zip}."`) and returns it as `report["research_request"]` with a `status` of `missing` (no note at all), `stale` (note exists but older than 120 days), or `current` (skip the panel). The frontend renders it with a copy-to-clipboard button in `researchRequestPanel` (`static/app.js`) only for `missing`/`stale`.
+Two roots, same taxonomy (`global/states/zips/cities/properties`): `knowledge_bank/researched/` is written only by the Skill; `knowledge_bank/user/` is written by the in-app form or by hand. `build_folder` in `app/knowledge_bank.py` always prepends `user/` (there is no "researched" scope choice in the form anymore - removed when this split landed), and `create_note` separately refuses any folder starting with `researched/` even if a caller tries to set `payload.folder` directly, so the trust boundary holds regardless of entry point. `describe_source` tags every note/document with `researched`, `user`, or `legacy` (old flat `<state>-<zip>/` folders, still read for compatibility). `data_loader.load_knowledge_bank_context` searches both roots at every specificity tier (broadest to most specific), interleaved per tier so a more specific folder always outranks a broader one regardless of which root it's in.
+
+`property-policy-research` (the Skill, in `.claude/skills/`) **writes** notes; the app only **reads** them. Notes also arrive from the in-app form (`POST /api/knowledge-bank/notes`) or by hand - the app cannot tell the difference beyond the root tag. The Skill cannot run inside the app itself: it needs an LLM agent loop with live web search, a different runtime than this deterministic FastAPI process, and calling out to one at request time would break the proposal's offline MVP commitment. What the app does instead: `build_research_request` in `analysis.py` builds a ready-to-paste command from the address already on the form (`"Run policy diligence on {address}, {city}, {state} {zip}."`) and returns it as `report["research_request"]` with a `status` of `missing` (no note at all), `stale` (note exists but older than 120 days), or `current` (skip the panel). The frontend renders it with a copy-to-clipboard button in `researchRequestPanel` (`static/app.js`) only for `missing`/`stale`.
 
 `parse_policy_note` in `app/knowledge_bank.py` pulls structure out of a note: heading, `**Researched:**` date and staleness (over 120 days), the `| Flag | Severity | Why |` table, a `## NorthStar Machine-Readable Summary` key/value block, diligence lines (containing "unverified", "confirm with", "obtain"), and counts of official versus secondary citations. Notes lacking any of that still display; they just contribute less.
 
@@ -68,7 +70,9 @@ Loan amount, amortized payment, operating expenses, NOI, monthly and annual cash
 
 Complete and working. All 80 tests pass. The app has been verified in a browser end to end: analysis, the address-mismatch warnings, the Knowledge Bank page, adding a note through the form and watching it change that property's report, and the analysis trail.
 
-Bundled researched notes cover Austin (78704), Los Angeles (90026), and Brooklyn (11215). Los Angeles and Brooklyn have no built-in policy record, so those reports are driven entirely by the notes.
+Bundled researched notes cover Austin (78704), Los Angeles (90026), and Brooklyn (11215), all in `knowledge_bank/researched/`. Los Angeles and Brooklyn have no built-in policy record, so those reports are driven entirely by the notes.
+
+The user's own Saint Charles, MO 63301 research (real property they're evaluating) is written locally at `knowledge_bank/researched/zips/63301/policy-notes.md` but deliberately kept out of git - the repo is public, and that note is tied to a real address and a recorded HOA document (`knowledge_bank/zips/63301/HOA_852771.pdf`, also untracked). Both stay local-only unless the user asks to publish them.
 
 ## Known Issues
 
@@ -87,17 +91,18 @@ Bundled researched notes cover Austin (78704), Los Angeles (90026), and Brooklyn
 
 Newest first. Each entry is one commit on `main`.
 
-1. **README/agentic.md realignment + the research-request panel** - rewrote README.md and agentic.md end to end (they had drifted from the code and from each other by accretion), added a Mermaid flow diagram of the whole project, and closed a real gap the user found: since the app already has the address, `build_research_request` now hands the user a ready-to-paste Skill command instead of making them retype it, shown only when a note is missing or stale.
-2. **Knowledge-bank reorganization and traceability** - the folder had two competing layouts for the same scope (`zips/78704/` and flat `tx-78704/`) plus eleven placeholder READMEs the loader always skipped; consolidated to one hierarchy, added the per-ZIP analysis trail, and updated the project's `SKILL.md` to write into `zips/<zip>/` (the Lab 5 submitted copy is unchanged).
-3. **Knowledge bank as a first-class feature** - added `app/knowledge_bank.py`, the `/knowledge-bank` page, in-app note creation, HTML rendering of notes, staleness and citation counts, the machine-readable limits that correct the financial model, and the diligence checklist.
-4. **Lab 5 integration** - brought the three researched notes into the project and made their flag tables drive the report instead of displaying as text.
-5. **Static asset cache-busting** - `?v=<mtime>` so a cached `app.js` cannot make fixed code look broken.
-6. **Inline address validation** - the location check also runs on the form via `POST /api/location-check`.
-7. **Launcher clears port 8000** - stops a stale NorthStar server before starting, warns instead of killing anything that is not one.
-8. **Location consistency check** - `zip_directory.json` plus `check_location_consistency`; mismatches warn on the form, above the recommendation, and as a high risk.
-9. **Wrong-city policy fix** - a Saint Charles ZIP falling back to Missouri state data was showing a St. Louis example link; city-specific links now carry `applies_to_city` and are filtered unless the city matches.
-10. **Jurisdiction layering** - policy output merges city/county, state, and national records instead of picking one, with every flag and link tagged by jurisdiction.
-11. **Week 9 proposal alignment** - bundled the Skill into the repo and wired its output folders into the loader.
+1. **Split the knowledge bank into researched/ vs. user/ roots** - the user asked for a real trust boundary between AI-verified and human-typed notes. `researched/` is written only by the Skill (SKILL.md updated to match); `user/` is written by the in-app form (the old "researched"-style scope choice was removed from the form entirely) or by hand. `create_note` refuses to write into `researched/` even via a direct `folder` override. The three bundled sample notes moved to `researched/zips/{78704,90026,11215}/`. Also actually ran the Skill (via the Skill tool, with my own web search - no new API key needed) for the user's real address, cross-referencing a recorded HOA Master Indenture PDF they had on file; wrote the result to `researched/zips/63301/` but kept it and the PDF out of git since the repo is public.
+2. **README/agentic.md realignment + the research-request panel** - rewrote README.md and agentic.md end to end (they had drifted from the code and from each other by accretion), added a Mermaid flow diagram of the whole project, and closed a real gap the user found: since the app already has the address, `build_research_request` now hands the user a ready-to-paste Skill command instead of making them retype it, shown only when a note is missing or stale.
+3. **Knowledge-bank reorganization and traceability** - the folder had two competing layouts for the same scope (`zips/78704/` and flat `tx-78704/`) plus eleven placeholder READMEs the loader always skipped; consolidated to one hierarchy, added the per-ZIP analysis trail, and updated the project's `SKILL.md` to write into `zips/<zip>/` (the Lab 5 submitted copy is unchanged).
+4. **Knowledge bank as a first-class feature** - added `app/knowledge_bank.py`, the `/knowledge-bank` page, in-app note creation, HTML rendering of notes, staleness and citation counts, the machine-readable limits that correct the financial model, and the diligence checklist.
+5. **Lab 5 integration** - brought the three researched notes into the project and made their flag tables drive the report instead of displaying as text.
+6. **Static asset cache-busting** - `?v=<mtime>` so a cached `app.js` cannot make fixed code look broken.
+7. **Inline address validation** - the location check also runs on the form via `POST /api/location-check`.
+8. **Launcher clears port 8000** - stops a stale NorthStar server before starting, warns instead of killing anything that is not one.
+9. **Location consistency check** - `zip_directory.json` plus `check_location_consistency`; mismatches warn on the form, above the recommendation, and as a high risk.
+10. **Wrong-city policy fix** - a Saint Charles ZIP falling back to Missouri state data was showing a St. Louis example link; city-specific links now carry `applies_to_city` and are filtered unless the city matches.
+11. **Jurisdiction layering** - policy output merges city/county, state, and national records instead of picking one, with every flag and link tagged by jurisdiction.
+12. **Week 9 proposal alignment** - bundled the Skill into the repo and wired its output folders into the loader.
 
 ## Run instructions
 

@@ -36,7 +36,7 @@
           <div class="panel-heading">
             <div>
               <h2>Add a local policy note</h2>
-              <p class="panel-note">Paste an HOA rule, city ordinance, lease restriction, or lender condition.</p>
+              <p class="panel-note">Paste an HOA rule, city ordinance, lease restriction, or lender condition. Saved under <code>user/</code> &mdash; see below.</p>
             </div>
           </div>
 
@@ -44,13 +44,12 @@
             <label>
               <span>Where does it apply?</span>
               <select name="scope" id="scopeSelect">
-                <option value="researched">A specific ZIP, researched-note style (tx-78704)</option>
-                <option value="zip">A ZIP code (zips/78704)</option>
-                <option value="state">A state (states/TX)</option>
-                <option value="city">A city (cities/austin_tx)</option>
-                <option value="property">One property (properties/address)</option>
-                <option value="global">Every property (global)</option>
-                <option value="custom">Custom folder</option>
+                <option value="zip">A ZIP code (user/zips/78704)</option>
+                <option value="state">A state (user/states/TX)</option>
+                <option value="city">A city (user/cities/austin_tx)</option>
+                <option value="property">One property (user/properties/address)</option>
+                <option value="global">Every property (user/global)</option>
+                <option value="custom">Custom folder (still under user/)</option>
               </select>
             </label>
 
@@ -86,6 +85,17 @@
 
             <p id="addNoteResult" class="kb-result hidden" role="status" aria-live="polite"></p>
           </form>
+
+          <details class="kb-help" open>
+            <summary>Two folders: researched/ vs. user/</summary>
+            <p>
+              <code>knowledge_bank/researched/</code> holds notes the <strong>property-policy-research Skill</strong>
+              wrote itself, after live web search and verification against official sources. Nothing else writes
+              there &mdash; this form can't, and never will. <code>knowledge_bank/user/</code> is everything a person
+              added: this form, or a file dropped in by hand. Every note in the list below shows which one it came
+              from, so you can tell a verified fact from something typed in.
+            </p>
+          </details>
 
           <details class="kb-help">
             <summary>How notes change a report</summary>

@@ -156,8 +156,8 @@ def _write_note(directory, name, text):
 
 def test_reads_classic_knowledge_bank_folders(tmp_path, monkeypatch):
     monkeypatch.setattr(data_loader, "KNOWLEDGE_BANK_DIR", tmp_path)
-    _write_note(tmp_path / "zips" / "46202", "rental_policy_notes.md", "ZIP note")
-    _write_note(tmp_path / "states" / "IN", "landlord_tenant_notes.txt", "State note")
+    _write_note(tmp_path / "user" / "zips" / "46202", "rental_policy_notes.md", "ZIP note")
+    _write_note(tmp_path / "user" / "states" / "IN", "landlord_tenant_notes.txt", "State note")
 
     context = data_loader.load_knowledge_bank_context(
         "725 N Delaware St", "Indianapolis", "IN", "46202"
@@ -168,7 +168,21 @@ def test_reads_classic_knowledge_bank_folders(tmp_path, monkeypatch):
     assert "landlord_tenant_notes.txt" in names
 
 
-def test_reads_policy_research_skill_output_folder(tmp_path, monkeypatch):
+def test_reads_researched_and_user_roots_and_tags_source(tmp_path, monkeypatch):
+    monkeypatch.setattr(data_loader, "KNOWLEDGE_BANK_DIR", tmp_path)
+    _write_note(tmp_path / "researched" / "zips" / "46202", "policy-notes.md", "Skill note")
+    _write_note(tmp_path / "user" / "zips" / "46202", "hoa.md", "User note")
+
+    context = data_loader.load_knowledge_bank_context(
+        "725 N Delaware St", "Indianapolis", "IN", "46202"
+    )
+
+    sources = {doc["name"]: doc["source"] for doc in context["documents"]}
+    assert sources["policy-notes.md"] == "researched"
+    assert sources["hoa.md"] == "user"
+
+
+def test_reads_legacy_flat_skill_output_folder(tmp_path, monkeypatch):
     monkeypatch.setattr(data_loader, "KNOWLEDGE_BANK_DIR", tmp_path)
     _write_note(tmp_path / "tx-78704", "policy-notes.md", "Austin STR rules")
 
@@ -178,11 +192,26 @@ def test_reads_policy_research_skill_output_folder(tmp_path, monkeypatch):
 
     assert [doc["name"] for doc in context["documents"]] == ["policy-notes.md"]
     assert context["documents"][0]["excerpt"] == "Austin STR rules"
+    assert context["documents"][0]["source"] == "legacy"
 
 
 def test_readme_files_are_ignored(tmp_path, monkeypatch):
     monkeypatch.setattr(data_loader, "KNOWLEDGE_BANK_DIR", tmp_path)
-    _write_note(tmp_path / "global", "README.md", "instructions")
+    _write_note(tmp_path / "user" / "global", "README.md", "instructions")
+
+    context = data_loader.load_knowledge_bank_context(
+        "725 N Delaware St", "Indianapolis", "IN", "46202"
+    )
+
+    assert context["documents"] == []
+
+
+def test_unprefixed_folder_without_legacy_shape_is_not_searched(tmp_path, monkeypatch):
+    # A note dropped directly at knowledge_bank/zips/<zip> (no researched/ or
+    # user/ prefix, and not the legacy state-zip shape) predates neither
+    # convention this app now understands, so it is not picked up.
+    monkeypatch.setattr(data_loader, "KNOWLEDGE_BANK_DIR", tmp_path)
+    _write_note(tmp_path / "zips" / "46202", "orphaned.md", "not searched")
 
     context = data_loader.load_knowledge_bank_context(
         "725 N Delaware St", "Indianapolis", "IN", "46202"

@@ -6,7 +6,14 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from app.knowledge_bank import is_trace_file, parse_policy_note, render_markdown
+from app.knowledge_bank import (
+    RESEARCHED_ROOT,
+    USER_ROOT,
+    describe_source,
+    is_trace_file,
+    parse_policy_note,
+    render_markdown,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -253,9 +260,11 @@ def _read_text_file(path: Path, max_chars: int = 2200) -> dict[str, Any]:
         excerpt += "\n\n[Excerpt truncated in report. Open the file for the full text.]"
 
     parsed = parse_policy_note(content)
+    relative = path.relative_to(KNOWLEDGE_BANK_DIR)
     return {
         "name": path.name,
-        "relative_path": path.relative_to(KNOWLEDGE_BANK_DIR).as_posix(),
+        "relative_path": relative.as_posix(),
+        "source": describe_source(relative.parent.as_posix()),
         "excerpt": excerpt,
         "html": render_markdown(content),
         "place": parsed["place"],
@@ -272,11 +281,14 @@ def _read_text_file(path: Path, max_chars: int = 2200) -> dict[str, Any]:
 
 
 def load_knowledge_bank_context(address: str, city: str, state: str, zip_code: str) -> dict[str, Any]:
-    """Read local user-supplied policy notes for the selected property.
+    """Read every policy note that matches this property, AI-researched or user-added.
 
-    The MVP does not analyze uploaded documents yet, so this folder is the manual
-    bridge: users can place .md or .txt notes here and the report will surface
-    them alongside online source links.
+    Two roots hold the same global/states/zips/cities/properties taxonomy:
+    RESEARCHED_ROOT (written only by the property-policy-research Skill) and
+    USER_ROOT (written by the in-app form or by hand). Both are searched at
+    every specificity tier, broadest to most specific, so a more specific
+    folder always outranks a broader one regardless of which root it is in.
+    Legacy flat `state-zip` folders from before this split are still read.
     """
     state = normalize_state(state)
     zip_code = zip_code.strip()
@@ -284,14 +296,20 @@ def load_knowledge_bank_context(address: str, city: str, state: str, zip_code: s
     address_slug = _slug(f"{address}_{zip_code}")
     state_lower = state.lower()
 
-    candidate_dirs = [
-        KNOWLEDGE_BANK_DIR / "global",
-        KNOWLEDGE_BANK_DIR / "states" / state,
-        KNOWLEDGE_BANK_DIR / "zips" / zip_code,
-        KNOWLEDGE_BANK_DIR / "cities" / city_slug,
-        KNOWLEDGE_BANK_DIR / "properties" / address_slug,
-        # Folders written by the property-policy-research agent Skill,
-        # e.g. knowledge_bank/tx-78704/policy-notes.md
+    tiers = [
+        "global",
+        f"states/{state}",
+        f"zips/{zip_code}",
+        f"cities/{city_slug}",
+        f"properties/{address_slug}",
+    ]
+    candidate_dirs = []
+    for tier in tiers:
+        candidate_dirs.append(KNOWLEDGE_BANK_DIR / RESEARCHED_ROOT / tier)
+        candidate_dirs.append(KNOWLEDGE_BANK_DIR / USER_ROOT / tier)
+    candidate_dirs += [
+        # Legacy folders from before the researched/user split, e.g.
+        # knowledge_bank/tx-78704/policy-notes.md
         KNOWLEDGE_BANK_DIR / f"{state_lower}-{zip_code}",
         KNOWLEDGE_BANK_DIR / f"{state_lower}-{_slug(city)}",
     ]
@@ -349,11 +367,11 @@ def load_knowledge_bank_context(address: str, city: str, state: str, zip_code: s
             directory.relative_to(KNOWLEDGE_BANK_DIR).as_posix() for directory in candidate_dirs
         ],
         "instructions": (
-            "Add local-law, HOA, condo, lease, lender, or rental-policy notes as .md or .txt files "
-            "inside knowledge_bank/global, knowledge_bank/states/STATE, knowledge_bank/zips/ZIP, "
-            "knowledge_bank/cities/city_state, or knowledge_bank/properties/address_zip. "
-            "Notes can also be generated automatically by the property-policy-research agent Skill, "
-            "which writes source-cited policy notes to knowledge_bank/state-zip (for example tx-78704). "
-            "A future hosted version can replace this folder with document upload."
+            "Add local-law, HOA, condo, lease, lender, or rental-policy notes through the "
+            "Knowledge Bank page, or as .md/.txt files under knowledge_bank/user/global, "
+            "knowledge_bank/user/states/STATE, knowledge_bank/user/zips/ZIP, "
+            "knowledge_bank/user/cities/city_state, or knowledge_bank/user/properties/address_zip. "
+            "knowledge_bank/researched/ holds source-cited notes written by the "
+            "property-policy-research agent Skill and should not be edited by hand."
         ),
     }

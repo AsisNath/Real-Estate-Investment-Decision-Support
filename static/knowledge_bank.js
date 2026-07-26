@@ -16,7 +16,6 @@ const noteBody = document.querySelector("#noteBody");
 let allNotes = [];
 
 const SCOPE_FIELDS = {
-  researched: { label: "ZIP code", placeholder: "78704", needsState: true },
   zip: { label: "ZIP code", placeholder: "78704", needsState: false },
   state: { label: "State", placeholder: "TX", needsState: false },
   city: { label: "City", placeholder: "Austin", needsState: true },
@@ -65,6 +64,12 @@ function severityChips(counts) {
     .join("");
 }
 
+function sourceBadge(source) {
+  const labels = { researched: "AI-researched", user: "Added by you", legacy: "Legacy folder" };
+  const classes = { researched: "low", user: "medium", legacy: "" };
+  return `<span class="badge source-badge ${classes[source] || ""}">${labels[source] || source}</span>`;
+}
+
 function renderSummary(data) {
   if (data.note_count === 0) {
     summaryEl.innerHTML = `
@@ -106,7 +111,7 @@ function renderList(notes) {
         <article class="kb-note ${note.is_stale ? "stale" : ""}">
           <div class="kb-note-head">
             <h3>${escapeHtml(note.place)}</h3>
-            ${severityChips(note.flag_counts)}
+            ${sourceBadge(note.source)}${severityChips(note.flag_counts)}
           </div>
           <p class="kb-note-scope">${escapeHtml(note.applies_to)}</p>
           <p class="kb-note-meta">${freshness} &middot; ${citations}${
@@ -178,7 +183,8 @@ async function openNote(path) {
   if (!response.ok) return;
   const note = await response.json();
 
-  const bits = [note.applies_to];
+  const sourceLabels = { researched: "AI-researched", user: "Added by you", legacy: "Legacy folder" };
+  const bits = [sourceLabels[note.source] || note.source, note.applies_to];
   if (note.researched) bits.push(`Researched ${note.researched}`);
   bits.push(`${note.official_citations} official / ${note.secondary_citations} secondary citations`);
   showInViewer(note.place || note.name, bits.join(" · "), note.html);

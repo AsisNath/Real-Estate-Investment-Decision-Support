@@ -270,9 +270,10 @@ function knowledgeBankPanel(knowledgeBank) {
             doc.official_citations + doc.secondary_citations > 0
               ? `${doc.official_citations} official / ${doc.secondary_citations} secondary citations`
               : "";
+          const sourceLabels = { researched: "AI-researched", user: "Added by you", legacy: "Legacy folder" };
           return `
             <details class="knowledge-doc">
-              <summary>${escapeHtml(doc.place || doc.relative_path)}</summary>
+              <summary>${escapeHtml(doc.place || doc.relative_path)} ${badge(sourceLabels[doc.source] || doc.source, doc.source === "researched" ? "low" : "medium")}</summary>
               ${meta ? `<p class="doc-meta">${meta}</p>` : ""}
               ${citations ? `<p class="doc-meta">${citations}</p>` : ""}
               ${doc.is_stale ? `<p class="doc-meta stale-note">This note is ${doc.days_old} days old. Re-run the research Skill before relying on it.</p>` : ""}

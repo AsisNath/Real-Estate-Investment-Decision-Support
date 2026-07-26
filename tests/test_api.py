@@ -71,14 +71,14 @@ def test_inventory_lists_the_bundled_notes():
     inventory = knowledge_bank_inventory()
 
     paths = [note["relative_path"] for note in inventory["notes"]]
-    assert "zips/78704/policy-notes.md" in paths
-    assert "zips/90026/policy-notes.md" in paths
-    assert "zips/11215/policy-notes.md" in paths
+    assert "researched/zips/78704/policy-notes.md" in paths
+    assert "researched/zips/90026/policy-notes.md" in paths
+    assert "researched/zips/11215/policy-notes.md" in paths
     assert inventory["high_flag_total"] >= 6
 
 
 def test_note_endpoint_renders_html():
-    note = knowledge_bank_note("zips/11215/policy-notes.md")
+    note = knowledge_bank_note("researched/zips/11215/policy-notes.md")
 
     assert "Brooklyn" in note["place"]
     assert "<table>" in note["html"]
@@ -110,8 +110,23 @@ def test_add_note_endpoint_writes_into_the_bank(tmp_path, monkeypatch):
         )
     )
 
-    assert result["relative_path"] == "zips/46202/hoa-cap.md"
-    assert (tmp_path / "zips" / "46202" / "hoa-cap.md").exists()
+    assert result["relative_path"] == "user/zips/46202/hoa-cap.md"
+    assert (tmp_path / "user" / "zips" / "46202" / "hoa-cap.md").exists()
+
+
+def test_add_note_endpoint_refuses_the_researched_folder(tmp_path, monkeypatch):
+    # The scope/value path always lands under user/, but payload.folder lets a
+    # caller name a folder directly - this confirms that route still can't
+    # reach researched/, which is reserved for the Skill itself.
+    monkeypatch.setattr(knowledge_bank, "KNOWLEDGE_BANK_DIR", tmp_path)
+
+    with pytest.raises(HTTPException) as error:
+        add_knowledge_bank_note(
+            NewNoteRequest(folder="researched/zips/99999", content="x")
+        )
+
+    assert error.value.status_code == 400
+    assert not (tmp_path / "researched").exists()
 
 
 def test_add_note_endpoint_reports_bad_scope_values(tmp_path, monkeypatch):
@@ -226,7 +241,7 @@ def test_research_request_is_stale_when_a_matching_note_is_old(tmp_path, monkeyp
     import app.data_loader as data_loader
 
     monkeypatch.setattr(data_loader, "KNOWLEDGE_BANK_DIR", tmp_path)
-    note_dir = tmp_path / "zips" / "82001"
+    note_dir = tmp_path / "user" / "zips" / "82001"
     note_dir.mkdir(parents=True)
     (note_dir / "policy-notes.md").write_text(
         "# Policy Notes - Somewhere, WY 82001\n\n**Researched:** 2020-01-01\n\nOld note.\n",

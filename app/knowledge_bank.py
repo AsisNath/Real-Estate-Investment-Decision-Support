@@ -22,6 +22,16 @@ NOTE_SUFFIXES = {".md", ".txt"}
 MAX_NOTE_BYTES = 200_000
 STALE_AFTER_DAYS = 120
 
+# Two top-level roots, each holding the same global/states/zips/cities/properties
+# taxonomy. RESEARCHED_ROOT is written only by the property-policy-research Skill
+# (live web search, verified against official sources). USER_ROOT is written by
+# the in-app "Add a note" form or by hand. The app reads both the same way, but
+# every note it surfaces is tagged with which one it came from, so an investor
+# can tell a Skill-verified fact from something a person typed in.
+RESEARCHED_ROOT = "researched"
+USER_ROOT = "user"
+TAXONOMY_FOLDERS = ("global", "states", "zips", "cities", "properties")
+
 # Files beginning with "_" are written by the app, not by a researcher. They are
 # kept beside the notes for traceability but never read as policy findings.
 TRACE_PREFIX = "_"
@@ -175,14 +185,28 @@ def render_markdown(content: str) -> str:
 # ---------------------------------------------------------------- inventory
 
 
+def describe_source(relative_folder: str) -> str:
+    """Which root a note lives under: researched (AI), user, or legacy/uncategorized."""
+    top = relative_folder.strip("/").split("/")[0] if relative_folder.strip("/") else ""
+    if top == RESEARCHED_ROOT:
+        return "researched"
+    if top == USER_ROOT:
+        return "user"
+    return "legacy"
+
+
 def describe_scope(relative_folder: str) -> str:
     """Human-readable description of which properties a folder applies to."""
     folder = relative_folder.strip("/")
+    parts = folder.split("/") if folder else []
+    if parts and parts[0] in (RESEARCHED_ROOT, USER_ROOT):
+        parts = parts[1:]
+    folder = "/".join(parts)
+
     if folder in {"", "."}:
         return "Loose notes in the knowledge-bank root"
     if folder == "global":
         return "Every property"
-    parts = folder.split("/")
     if parts[0] == "states" and len(parts) > 1:
         return f"Any property in {parts[1].upper()}"
     if parts[0] == "zips" and len(parts) > 1:
@@ -191,9 +215,9 @@ def describe_scope(relative_folder: str) -> str:
         return f"City folder {parts[1]}"
     if parts[0] == "properties" and len(parts) > 1:
         return f"Property folder {parts[1]}"
-    researched = re.fullmatch(r"([a-zA-Z]{2})-(\d{5})", parts[0])
-    if researched:
-        return f"{researched.group(1).upper()} {researched.group(2)} (researched note)"
+    legacy = re.fullmatch(r"([a-zA-Z]{2})-(\d{5})", parts[0])
+    if legacy:
+        return f"{legacy.group(1).upper()} {legacy.group(2)} (legacy folder)"
     return f"Folder {folder}"
 
 
@@ -229,6 +253,7 @@ def scan_knowledge_bank(root: Path | None = None) -> dict[str, Any]:
                     "relative_path": relative.as_posix(),
                     "folder": folder,
                     "name": path.name,
+                    "source": describe_source(folder),
                     "applies_to": describe_scope(folder),
                     "place": parsed["place"] or path.stem,
                     "researched": parsed["researched"],
@@ -377,10 +402,12 @@ def read_note(relative_path: str, root: Path | None = None) -> dict[str, Any]:
 
     content = path.read_text(encoding="utf-8", errors="ignore")
     parsed = parse_policy_note(content)
+    folder = path.relative_to(root.resolve()).parent.as_posix()
     return {
         "relative_path": path.relative_to(root.resolve()).as_posix(),
         "name": path.name,
-        "applies_to": describe_scope(path.relative_to(root.resolve()).parent.as_posix()),
+        "source": describe_source(folder),
+        "applies_to": describe_scope(folder),
         "content": content,
         "html": render_markdown(content),
         **{key: parsed[key] for key in ("place", "researched", "days_old", "is_stale", "flags", "facts", "diligence", "official_citations", "secondary_citations")},
@@ -416,41 +443,46 @@ def _clean_segment(value: str) -> str:
 
 
 def build_folder(scope: str, value: str = "", state: str = "") -> str:
-    """Turn a scope choice from the UI into a knowledge-bank folder path."""
+    """Turn a scope choice from the in-app form into a knowledge-bank folder path.
+
+    Everything created through this function is user-provided by definition
+    (a person filled out a web form), so every result is rooted under
+    USER_ROOT. AI-researched notes are written by the Skill directly to
+    RESEARCHED_ROOT and never go through this function.
+    """
     scope = (scope or "").strip().lower()
     value = (value or "").strip()
 
     if scope == "global":
-        return "global"
-    if scope == "state":
+        sub = "global"
+    elif scope == "state":
         if not re.fullmatch(r"[A-Za-z]{2}", value):
             raise ValueError("State must be a two-letter abbreviation.")
-        return f"states/{value.upper()}"
-    if scope == "zip":
+        sub = f"states/{value.upper()}"
+    elif scope == "zip":
         if not re.fullmatch(r"\d{5}", value):
             raise ValueError("ZIP must be five digits.")
-        return f"zips/{value}"
-    if scope == "city":
+        sub = f"zips/{value}"
+    elif scope == "city":
         if not value:
             raise ValueError("City is required.")
         suffix = f"_{state.strip().upper()}" if state.strip() else ""
-        return f"cities/{_clean_segment(value).lower()}{suffix.lower()}"
-    if scope == "property":
+        sub = f"cities/{_clean_segment(value).lower()}{suffix.lower()}"
+    elif scope == "property":
         if not value:
             raise ValueError("Address is required.")
-        return f"properties/{_clean_segment(value).lower()}"
-    if scope == "researched":
-        if not re.fullmatch(r"[A-Za-z]{2}", state.strip()) or not re.fullmatch(r"\d{5}", value):
-            raise ValueError("A researched note needs a two-letter state and a five-digit ZIP.")
-        return f"{state.strip().lower()}-{value}"
-    if scope == "custom":
+        sub = f"properties/{_clean_segment(value).lower()}"
+    elif scope == "custom":
         cleaned = "/".join(
             _clean_segment(part) for part in value.replace("\\", "/").split("/") if part.strip()
         )
         if not cleaned:
             raise ValueError("Folder is required.")
-        return cleaned
-    raise ValueError(f"Unknown scope: {scope}")
+        sub = cleaned
+    else:
+        raise ValueError(f"Unknown scope: {scope}")
+
+    return f"{USER_ROOT}/{sub}"
 
 
 def create_note(
@@ -460,8 +492,19 @@ def create_note(
     overwrite: bool = False,
     root: Path | None = None,
 ) -> dict[str, Any]:
-    """Write a user-supplied policy note into the knowledge bank."""
+    """Write a user-supplied policy note into the knowledge bank.
+
+    Refuses to write into RESEARCHED_ROOT: that folder is reserved for the
+    property-policy-research Skill, which writes there directly (not through
+    this function), so a note's presence there is a trustworthy signal that it
+    was actually researched, not just labeled that way.
+    """
     root = root or KNOWLEDGE_BANK_DIR
+    if folder.strip("/").split("/")[0] == RESEARCHED_ROOT:
+        raise ValueError(
+            f"'{RESEARCHED_ROOT}/' is reserved for the property-policy-research Skill. "
+            f"Use '{USER_ROOT}/' (or the Add note form, which does this for you) for your own notes."
+        )
     if not content or not content.strip():
         raise ValueError("The note is empty.")
     if len(content.encode("utf-8")) > MAX_NOTE_BYTES:

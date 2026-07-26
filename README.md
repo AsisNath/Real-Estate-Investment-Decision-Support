@@ -144,28 +144,38 @@ These are two different things:
 
 **The Skill writes; the app reads.** The app never goes online — it reads whatever files are in the folder when you click Analyze.
 
+### Two roots: `researched/` vs. `user/`
+
+So a fact can always be told apart from something typed in, the folder is split into two roots holding the identical taxonomy:
+
+- **`knowledge_bank/researched/`** — written only by the Skill, after live web search verified against official sources. The app's own write path refuses to write here.
+- **`knowledge_bank/user/`** — written by you, through the form or by hand.
+
+A property reads both roots at every specificity tier, and every note the app shows is tagged with which root it came from.
+
 ### Three ways notes get in
 
-1. **The research Skill** — ask Claude *"Run policy diligence on 250 5th Ave, Brooklyn, NY 11215"* and it researches the rules, verifies them against official `.gov` sources, and writes a dated, cited note.
-2. **The Knowledge Bank page** — use the "Add a local policy note" form, choose where it applies, paste your text, save.
-3. **By hand** — drop a `.md` or `.txt` file into the right folder.
-
-All three are equivalent; the app cannot tell them apart.
+1. **The research Skill** — ask Claude *"Run policy diligence on 250 5th Ave, Brooklyn, NY 11215"* and it researches the rules, verifies them against official `.gov` sources, and writes a dated, cited note into `researched/`.
+2. **The Knowledge Bank page** — use the "Add a local policy note" form, choose where it applies, paste your text, save; this always lands in `user/`.
+3. **By hand** — drop a `.md` or `.txt` file into the right `user/` folder.
 
 ### Folder layout
 
-Folders run broad to specific, and a property picks up every folder that matches it:
+Within each root, folders run broad to specific, and a property picks up every matching folder in both roots:
 
 ```text
 knowledge_bank/
-├── global/                          every property
-├── states/NY/                       any property in New York
-├── zips/11215/                      that ZIP
-├── cities/brooklyn_ny/              that city
-└── properties/250_5th_ave_11215/    one specific address
+├── researched/                          written only by the Skill
+│   └── zips/11215/policy-notes.md
+└── user/                                written by you
+    ├── global/                          every property
+    ├── states/NY/                       any property in New York
+    ├── zips/11215/                      that ZIP
+    ├── cities/brooklyn_ny/              that city
+    └── properties/250_5th_ave_11215/    one specific address
 ```
 
-Folders are created on demand, so only ones holding a note exist. Older flat `<state>-<zip>/` folders are still read, so notes from the standalone Lab 5 Skill keep working.
+Folders are created on demand, so only ones holding a note exist. Older flat `<state>-<zip>/` folders (from before this split existed) are still read, tagged as a legacy source.
 
 ### The Knowledge Bank page
 
@@ -212,9 +222,9 @@ Three notes produced by the Skill ship with the project:
 
 | Note | Market | Why it is interesting |
 |---|---|---|
-| `zips/78704/policy-notes.md` | Austin, TX | STR legal with a license; no rent control statewide |
-| `zips/90026/policy-notes.md` | Los Angeles, CA | STR effectively banned for investors; two overlapping rent-control regimes |
-| `zips/11215/policy-notes.md` | Brooklyn, NY | STR blocked by Local Law 18; rent freeze for stabilized units |
+| `researched/zips/78704/policy-notes.md` | Austin, TX | STR legal with a license; no rent control statewide |
+| `researched/zips/90026/policy-notes.md` | Los Angeles, CA | STR effectively banned for investors; two overlapping rent-control regimes |
+| `researched/zips/11215/policy-notes.md` | Brooklyn, NY | STR blocked by Local Law 18; rent freeze for stabilized units |
 
 Los Angeles and Brooklyn have no built-in sample policy record, so those reports are driven entirely by the researched notes — the knowledge bank doing exactly the job the proposal describes.
 
@@ -226,7 +236,7 @@ Files beginning with `_` are written by the app and are **never read back into a
 
 ### The research Skill in detail
 
-Given an address, the Skill web-searches short-term rental permit rules, state landlord–tenant law, rent control status, and HOA rental restrictions; verifies findings against official `.gov` sources; and writes a note to `knowledge_bank/zips/<zip>/policy-notes.md`. Every fact carries a source link, an "as of" date, and an official-versus-secondary tag. When an official source and a third-party guide disagree, the official source wins.
+Given an address, the Skill web-searches short-term rental permit rules, state landlord–tenant law, rent control status, and HOA rental restrictions; verifies findings against official `.gov` sources; and writes a note to `knowledge_bank/researched/zips/<zip>/policy-notes.md`. Every fact carries a source link, an "as of" date, and an official-versus-secondary tag. When an official source and a third-party guide disagree, the official source wins. It never writes into `knowledge_bank/user/`, which is reserved for notes a person adds.
 
 It runs outside the app, in any agent with web search and file access. See [the Skill's README](.claude/skills/property-policy-research/README.md) for setup on Claude Code, Cowork, claude.ai, and Codex.
 

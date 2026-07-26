@@ -78,19 +78,45 @@ changes with near-term effective dates.
 
 ### Step 5: Save the file
 
-Write to: `knowledge_bank/zips/<zip>/policy-notes.md` (e.g.
-`knowledge_bank/zips/78704/policy-notes.md`). Create the folder if needed. If
-only a city/state was given, use `knowledge_bank/cities/<city-slug>_<state>/`
-(e.g. `knowledge_bank/cities/austin_tx/`). Always record the state and county in
-the note's heading, since the folder name carries only the ZIP.
+Write to: `knowledge_bank/researched/zips/<zip>/policy-notes.md` (e.g.
+`knowledge_bank/researched/zips/78704/policy-notes.md`). Create the folder if
+needed. If only a city/state was given, use
+`knowledge_bank/researched/cities/<city-slug>_<state>/` (e.g.
+`knowledge_bank/researched/cities/austin_tx/`). Always record the state and
+county in the note's heading, since the folder name carries only the ZIP.
 
-This matches the NorthStar knowledge-bank hierarchy, where folders run from
-broad to specific: `global/`, `states/<ST>/`, `zips/<ZIP>/`,
-`cities/<city_state>/`, `properties/<address_zip>/`. NorthStar still reads older
-flat `<state>-<zip>/` folders, so existing notes keep working.
+**Always write under `researched/`, never under `user/`.** NorthStar treats
+`knowledge_bank/researched/` as the folder only this Skill writes to — that is
+what makes a note there trustworthy as AI-verified rather than a note anyone
+could have typed. `knowledge_bank/user/` is reserved for notes added by a
+person (through the app's form or by hand); this Skill must never write there.
+
+Within `researched/`, folders run broad to specific: `global/`, `states/<ST>/`,
+`zips/<ZIP>/`, `cities/<city_state>/`, `properties/<address_zip>/`. NorthStar
+still reads older flat `<state>-<zip>/` folders from before this structure
+existed, so any pre-existing notes keep working, but always write new notes
+under `researched/` going forward.
 
 Never write a file whose name starts with an underscore: NorthStar reserves that
 prefix for its own analysis trail files.
+
+### Step 5b: Include a machine-readable summary when the facts allow it
+
+If the research produced a clear numeric or yes/no answer for any of these,
+add a `## NorthStar Machine-Readable Summary` section as the last section of
+the note, so NorthStar's report can check an investor's own assumptions
+against it automatically:
+
+```markdown
+## NorthStar Machine-Readable Summary
+
+- rent_growth_cap_percent: 3
+- short_term_rental_allowed: false
+- security_deposit_cap_months: 1
+```
+
+Use `none` for a key with no applicable limit. Never guess a number — omit the
+key entirely if the research did not produce a specific, cited figure.
 
 ### Step 6: Re-read and audit
 

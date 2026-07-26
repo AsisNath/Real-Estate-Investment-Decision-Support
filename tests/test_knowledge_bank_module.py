@@ -6,6 +6,7 @@ from app.knowledge_bank import (
     build_folder,
     create_note,
     describe_scope,
+    describe_source,
     parse_policy_note,
     read_note,
     render_markdown,
@@ -90,9 +91,22 @@ def test_describe_scope_explains_folders():
     assert "TX 78704" in describe_scope("tx-78704")
 
 
+def test_describe_scope_strips_the_root_prefix():
+    assert describe_scope("researched/zips/78704") == "ZIP 78704"
+    assert describe_scope("user/states/TX") == "Any property in TX"
+    assert describe_scope("user/global") == "Every property"
+
+
+def test_describe_source_identifies_the_root():
+    assert describe_source("researched/zips/78704") == "researched"
+    assert describe_source("user/global") == "user"
+    assert describe_source("tx-78704") == "legacy"
+    assert describe_source("zips/78704") == "legacy"
+
+
 def test_scan_reports_every_note(tmp_path):
-    (tmp_path / "zips" / "12345").mkdir(parents=True)
-    (tmp_path / "zips" / "12345" / "policy-notes.md").write_text(NOTE, encoding="utf-8")
+    (tmp_path / "researched" / "zips" / "12345").mkdir(parents=True)
+    (tmp_path / "researched" / "zips" / "12345" / "policy-notes.md").write_text(NOTE, encoding="utf-8")
     (tmp_path / "README.md").write_text("# ignore me", encoding="utf-8")
 
     inventory = scan_knowledge_bank(tmp_path)
@@ -101,6 +115,7 @@ def test_scan_reports_every_note(tmp_path):
     assert inventory["high_flag_total"] == 1
     note = inventory["notes"][0]
     assert note["applies_to"] == "ZIP 12345"
+    assert note["source"] == "researched"
     assert note["flag_counts"]["high"] == 1
     assert note["diligence_count"] >= 1
 
@@ -113,12 +128,13 @@ def test_scan_of_empty_bank(tmp_path):
 
 
 def test_build_folder_for_each_scope():
-    assert build_folder("global") == "global"
-    assert build_folder("state", "tx") == "states/TX"
-    assert build_folder("zip", "78704") == "zips/78704"
-    assert build_folder("researched", "78704", "tx") == "tx-78704"
-    assert build_folder("city", "Saint Charles", "MO") == "cities/saint_charles_mo"
-    assert build_folder("custom", "lenders/acme bank") == "lenders/acme_bank"
+    # Every scope choice lands under user/: build_folder backs the in-app
+    # form, and anything a form submits is user-provided by definition.
+    assert build_folder("global") == "user/global"
+    assert build_folder("state", "tx") == "user/states/TX"
+    assert build_folder("zip", "78704") == "user/zips/78704"
+    assert build_folder("city", "Saint Charles", "MO") == "user/cities/saint_charles_mo"
+    assert build_folder("custom", "lenders/acme bank") == "user/lenders/acme_bank"
 
 
 def test_build_folder_rejects_bad_values():
@@ -128,6 +144,17 @@ def test_build_folder_rejects_bad_values():
         build_folder("state", "Texas")
     with pytest.raises(ValueError):
         build_folder("nonsense", "x")
+    with pytest.raises(ValueError):
+        # The old Lab-5-style "researched" scope is gone: only the Skill
+        # itself writes into researched/, never the in-app form.
+        build_folder("researched", "78704", "tx")
+
+
+def test_create_note_refuses_the_researched_root(tmp_path):
+    with pytest.raises(ValueError):
+        create_note("researched/zips/78704", "note.md", "content", root=tmp_path)
+
+    assert not (tmp_path / "researched").exists()
 
 
 def test_create_and_read_a_user_note(tmp_path):

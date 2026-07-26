@@ -71,6 +71,8 @@ Two pages:
 Get-NetTCPConnection -LocalPort 8000 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
 ```
 
+**To free up disk space**, double-click **`Clean_NorthStar.bat`**. It removes only what NorthStar regenerates automatically — Python cache folders (`__pycache__`, `.pytest_cache`) and the analysis trail logs (`knowledge_bank/**/_analysis-log.md`) — and asks for confirmation before deleting anything. It never touches your policy notes, PDFs, or anything under `knowledge_bank/researched/` or `knowledge_bank/user/`. It also offers, as a separate confirmed step, to remove `.venv` (usually the single largest folder in the project); `Run_NorthStar.bat` reinstalls it automatically the next time you run it.
+
 ---
 
 ## What the report contains

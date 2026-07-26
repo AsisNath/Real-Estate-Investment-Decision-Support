@@ -228,6 +228,33 @@ function sourceLinks(links) {
     .join("");
 }
 
+function researchRequestPanel(researchRequest) {
+  if (!researchRequest || researchRequest.status === "current") return "";
+
+  const isMissing = researchRequest.status === "missing";
+  const heading = isMissing
+    ? "No researched policy note for this address yet"
+    : "This researched note is due for a refresh";
+  const explanation = isMissing
+    ? "The address is already filled in below. Paste this into a Claude Code, Cowork, or claude.ai chat with web search enabled, and the property-policy-research Skill will research this exact address and save the results here."
+    : "A policy note exists for this location, but it is older than the 120-day freshness window. Paste this into a chat with web search enabled to refresh it.";
+
+  return `
+    <section class="report-section research-request ${researchRequest.status}">
+      <div class="section-title">
+        <div>
+          <h3>${heading}</h3>
+          <p>${explanation}</p>
+        </div>
+      </div>
+      <div class="research-prompt-box">
+        <code id="researchPromptText">${escapeHtml(researchRequest.prompt)}</code>
+        <button type="button" class="secondary-action" id="copyResearchPrompt">Copy</button>
+      </div>
+    </section>
+  `;
+}
+
 function knowledgeBankPanel(knowledgeBank) {
   const documents = knowledgeBank.documents || [];
   const documentsHtml = documents.length
@@ -483,6 +510,8 @@ function renderReport(report) {
       ${sourceLinks(report.policy.links)}
     </section>
 
+    ${researchRequestPanel(report.research_request)}
+
     ${diligencePanel(report.diligence_items)}
 
     ${knowledgeBankPanel(report.knowledge_bank)}
@@ -553,6 +582,22 @@ function renderReport(report) {
   `;
 
   reportEl.classList.remove("hidden");
+
+  const copyButton = document.querySelector("#copyResearchPrompt");
+  if (copyButton) {
+    copyButton.addEventListener("click", async () => {
+      const text = document.querySelector("#researchPromptText").textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        copyButton.textContent = "Copied";
+      } catch (error) {
+        copyButton.textContent = "Select the text above";
+      }
+      setTimeout(() => {
+        copyButton.textContent = "Copy";
+      }, 2000);
+    });
+  }
 }
 
 async function loadSamples() {

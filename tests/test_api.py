@@ -187,6 +187,80 @@ def test_uncapped_market_has_no_rent_growth_conflict():
     assert report["assumption_conflicts"] == []
 
 
+def test_research_request_prompt_uses_the_entered_address():
+    payload = AnalysisRequest(
+        address="219 Charlestowne Place Dr",
+        city="Saint Charles",
+        state="mo",
+        zip_code="63301",
+        purchase_price=260000,
+        monthly_rent=2600,
+    )
+
+    report = analyze_property(payload)
+
+    assert report["research_request"]["prompt"] == (
+        "Run policy diligence on 219 Charlestowne Place Dr, Saint Charles, MO 63301."
+    )
+
+
+def test_research_request_is_missing_when_no_notes_exist(tmp_path, monkeypatch):
+    import app.data_loader as data_loader
+
+    monkeypatch.setattr(data_loader, "KNOWLEDGE_BANK_DIR", tmp_path)
+    payload = AnalysisRequest(
+        address="1 Empty Folder Rd",
+        city="Nowhere",
+        state="WY",
+        zip_code="82001",
+        purchase_price=260000,
+        monthly_rent=2600,
+    )
+
+    report = analyze_property(payload)
+
+    assert report["research_request"]["status"] == "missing"
+
+
+def test_research_request_is_stale_when_a_matching_note_is_old(tmp_path, monkeypatch):
+    import app.data_loader as data_loader
+
+    monkeypatch.setattr(data_loader, "KNOWLEDGE_BANK_DIR", tmp_path)
+    note_dir = tmp_path / "zips" / "82001"
+    note_dir.mkdir(parents=True)
+    (note_dir / "policy-notes.md").write_text(
+        "# Policy Notes - Somewhere, WY 82001\n\n**Researched:** 2020-01-01\n\nOld note.\n",
+        encoding="utf-8",
+    )
+    payload = AnalysisRequest(
+        address="1 Old Note Rd",
+        city="Somewhere",
+        state="WY",
+        zip_code="82001",
+        purchase_price=260000,
+        monthly_rent=2600,
+    )
+
+    report = analyze_property(payload)
+
+    assert report["research_request"]["status"] == "stale"
+
+
+def test_research_request_is_current_for_a_fresh_bundled_note():
+    payload = AnalysisRequest(
+        address="1200 S Congress Ave",
+        city="Austin",
+        state="TX",
+        zip_code="78704",
+        purchase_price=725000,
+        monthly_rent=3900,
+    )
+
+    report = analyze_property(payload)
+
+    assert report["research_request"]["status"] == "current"
+
+
 def test_diligence_checklist_reaches_the_report():
     payload = AnalysisRequest(
         address="1400 Echo Park Ave",

@@ -167,6 +167,32 @@ def build_assumption_conflicts(
     return conflicts
 
 
+def build_research_request(
+    request: AnalysisRequest,
+    knowledge_bank_context: dict[str, Any],
+) -> dict[str, Any]:
+    """Give the user a ready-to-paste command for the property-policy-research Skill.
+
+    The app already has the address; the only reason a user would have to retype
+    it is if we made them. The Skill itself cannot run inside this deterministic,
+    offline FastAPI process (it needs an LLM agent loop with live web search), so
+    the best the app can do is remove the busywork of composing the request.
+    """
+    prompt = (
+        f"Run policy diligence on {request.address}, {request.city}, "
+        f"{request.state.upper()} {request.zip_code}."
+    )
+    documents = knowledge_bank_context.get("documents", [])
+    if not documents:
+        status = "missing"
+    elif any(document.get("is_stale") for document in documents):
+        status = "stale"
+    else:
+        status = "current"
+
+    return {"prompt": prompt, "status": status}
+
+
 def build_report(
     request: AnalysisRequest,
     market_context: dict[str, Any],
@@ -265,6 +291,7 @@ def build_report(
         "market": market_context,
         "policy": policy_context,
         "knowledge_bank": knowledge_bank_context,
+        "research_request": build_research_request(request, knowledge_bank_context),
         "assumption_conflicts": assumption_conflicts,
         "diligence_items": knowledge_bank_context.get("diligence_items", []),
         "location_check": location_check,

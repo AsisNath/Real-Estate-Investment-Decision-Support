@@ -10,6 +10,40 @@ The app runs entirely on your machine and uses no paid APIs, no scraping, and no
 
 ---
 
+## How it all fits together
+
+Two connected flows share one folder. The blue path runs every time you click Analyze — always local, always deterministic. The amber path is manual and only needed when you want fresh, live-researched policy facts.
+
+```mermaid
+flowchart TD
+    subgraph appflow["Every analyze click — local & deterministic"]
+        A["Enter address + assumptions<br/><small>on the analysis form</small>"]
+        B["FastAPI validates & checks<br/><small>deterministic finance math runs</small>"]
+        C["Market + policy lookup<br/><small>layered + reads knowledge_bank</small>"]
+        D["Recommendation + report<br/><small>risks, conflicts, trail logged</small>"]
+        A --> B --> C --> D
+    end
+
+    subgraph research["Fresh research — manual, needs internet"]
+        E["A prompt appears<br/><small>address pre-filled</small>"]
+        F["Paste into Claude<br/><small>Claude Code, Cowork, or claude.ai</small>"]
+        G["property-policy-research Skill<br/><small>web search, confirms with .gov sources</small>"]
+        E --> F --> G
+    end
+
+    KB[("knowledge_bank/ folder<br/><small>plain files, shared by both paths</small>")]
+    H["Knowledge Bank page<br/><small>add notes by hand</small>"]
+
+    D -->|reads notes, writes the analysis trail| KB
+    D -.->|only if no note, or note is stale| E
+    G -->|writes policy-notes.md| KB
+    H -->|browse / add / view trail| KB
+```
+
+**Why the Skill can't just run automatically:** it needs an LLM agent loop with live web search — a fundamentally different runtime than this deterministic FastAPI process, and running it silently would break the proposal's "no paid APIs, fully offline" MVP commitment. What the app *can* do, and does: it already has your address, so it hands you a ready-to-paste command instead of making you type one. See [When there is no note yet](#when-there-is-no-note-yet-the-research-request-panel) below.
+
+---
+
 ## Quick start
 
 Double-click **`Run_NorthStar.bat`**. It creates `.venv` if needed, installs requirements, runs the tests, stops any old NorthStar server still holding port 8000, opens your browser, and starts the app at `http://127.0.0.1:8000`.
@@ -163,6 +197,14 @@ Any note is shown in the report. Two optional sections give it teeth.
 Analyze the Brooklyn sample with 3% rent growth and the report opens with a red panel: the Rent Guidelines Board froze stabilized leases at 0%, so the IRR and equity multiple below assume growth the law does not permit. This is the knowledge bank reaching into the deterministic model rather than sitting beside it as commentary.
 
 Notes are also scanned for "unverified / confirm with / obtain" lines, which become the report's **Diligence Checklist**.
+
+### When there is no note yet: the research request panel
+
+The app already has the address you entered — it should not make you retype it into a separate chat. When a property has no matching note, or its only note is older than 120 days, the report shows a panel with a ready-to-paste command, your exact address already filled in:
+
+> Run policy diligence on 250 5th Ave, Brooklyn, NY 11215.
+
+Click **Copy**, paste it into a Claude Code, Cowork, or claude.ai chat with web search enabled, and the Skill researches that address and writes a note back into `knowledge_bank/`. The next time you analyze that property, the app picks the note up automatically. When a fresh note already exists, this panel does not appear.
 
 ### Bundled researched notes
 

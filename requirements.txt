@@ -4,6 +4,9 @@ jinja2==3.1.6
 pydantic==2.11.7
 pytest==8.4.1
 markdown==3.8.2
+# Reads HOA declarations, leases, and inspection reports that the user drops
+# into knowledge_bank/user/ as PDFs rather than plain text.
+pypdf==6.14.2
 # Powers automatic policy research. The app runs without it - research falls
 # back to the copy-and-paste prompt - but nothing else needs the network.
 anthropic==0.120.2

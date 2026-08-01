@@ -273,8 +273,45 @@ def _slug(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
 
 
+def _extract_pdf_text(path: Path) -> str:
+    """Pull the text out of a PDF the user dropped into the knowledge bank.
+
+    Real due-diligence documents - HOA declarations, leases, inspection reports -
+    arrive as PDFs, so refusing to read them would make `user/` far less useful
+    than it looks. When extraction is impossible the file is still surfaced with
+    an explanation: a document the user deliberately filed must never be dropped
+    silently, because they would reasonably assume it was taken into account.
+    """
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        return (
+            f"[{path.name} is a PDF, and the `pypdf` package is not installed, so its "
+            "text could not be read. Run `pip install -r requirements.txt` and restart "
+            "the app, or paste the relevant clauses into a .md note beside it.]"
+        )
+
+    try:
+        reader = PdfReader(str(path))
+        pages = [page.extract_text() or "" for page in reader.pages]
+    except Exception as error:  # noqa: BLE001 - any malformed PDF, same outcome
+        return f"[{path.name} could not be read as a PDF: {error}]"
+
+    text = "\n\n".join(page.strip() for page in pages if page.strip()).strip()
+    if not text:
+        return (
+            f"[{path.name} contains no extractable text - it is most likely a scan or "
+            "photo of a document. Summarize the parts that matter into a .md note "
+            "beside it so the analysis can use them.]"
+        )
+    return text
+
+
 def _read_text_file(path: Path, max_chars: int = 2200) -> dict[str, Any]:
-    content = path.read_text(encoding="utf-8", errors="ignore").strip()
+    if path.suffix.lower() == ".pdf":
+        content = _extract_pdf_text(path)
+    else:
+        content = path.read_text(encoding="utf-8", errors="ignore").strip()
     excerpt = content[:max_chars]
     if len(content) > max_chars:
         excerpt += "\n\n[Excerpt truncated in report. Open the file for the full text.]"
@@ -341,7 +378,9 @@ def load_knowledge_bank_context(address: str, city: str, state: str, zip_code: s
         for path in sorted(directory.glob("*")):
             if (
                 path.is_file()
-                and path.suffix.lower() in {".md", ".txt"}
+                # PDFs are included because HOA declarations, leases, and
+                # inspection reports arrive that way; see _extract_pdf_text.
+                and path.suffix.lower() in {".md", ".txt", ".pdf"}
                 and path.name.lower() != "readme.md"
                 # Analysis trails are written by the app; reading them back
                 # would feed the report its own past output.
@@ -388,7 +427,7 @@ def load_knowledge_bank_context(address: str, city: str, state: str, zip_code: s
         ],
         "instructions": (
             "Add local-law, HOA, condo, lease, lender, or rental-policy notes through the "
-            "Knowledge Bank page, or as .md/.txt files under knowledge_bank/user/global, "
+            "Knowledge Bank page, or as .md/.txt/.pdf files under knowledge_bank/user/global, "
             "knowledge_bank/user/states/STATE, knowledge_bank/user/zips/ZIP, "
             "knowledge_bank/user/cities/city_state, or knowledge_bank/user/properties/address_zip. "
             "knowledge_bank/researched/ holds source-cited notes written by the "

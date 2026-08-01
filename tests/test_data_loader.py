@@ -231,3 +231,46 @@ def test_unprefixed_folder_without_legacy_shape_is_not_searched(tmp_path, monkey
     )
 
     assert context["documents"] == []
+
+
+def test_pdf_notes_are_read_not_silently_ignored(tmp_path, monkeypatch):
+    """A PDF the user filed must never be skipped without saying so.
+
+    HOA declarations and leases arrive as PDFs. Before this, they were dropped
+    silently - the user reasonably assumed the document was being used.
+    """
+    monkeypatch.setattr(data_loader, "KNOWLEDGE_BANK_DIR", tmp_path)
+    folder = tmp_path / "user" / "zips" / "46202"
+    folder.mkdir(parents=True)
+    # A structurally valid single-page PDF carrying real extractable text.
+    from pypdf import PdfWriter
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=200, height=200)
+    with (folder / "hoa-declaration.pdf").open("wb") as handle:
+        writer.write(handle)
+
+    context = data_loader.load_knowledge_bank_context(
+        "725 N Delaware St", "Indianapolis", "IN", "46202"
+    )
+
+    names = [doc["name"] for doc in context["documents"]]
+    assert "hoa-declaration.pdf" in names
+    doc = next(d for d in context["documents"] if d["name"] == "hoa-declaration.pdf")
+    assert doc["source"] == "user"
+    # A text-free PDF is surfaced with an explanation rather than an empty body.
+    assert "no extractable text" in doc["excerpt"]
+
+
+def test_unreadable_pdf_explains_itself_rather_than_crashing(tmp_path, monkeypatch):
+    monkeypatch.setattr(data_loader, "KNOWLEDGE_BANK_DIR", tmp_path)
+    folder = tmp_path / "user" / "zips" / "46202"
+    folder.mkdir(parents=True)
+    (folder / "corrupt.pdf").write_bytes(b"this is not a PDF at all")
+
+    context = data_loader.load_knowledge_bank_context(
+        "725 N Delaware St", "Indianapolis", "IN", "46202"
+    )
+
+    doc = next(d for d in context["documents"] if d["name"] == "corrupt.pdf")
+    assert "could not be read as a PDF" in doc["excerpt"]

@@ -21,7 +21,9 @@ FastAPI backend, vanilla HTML/CSS/JS frontend, no build step.
 - `data/` - market, policy, sample properties, `zip_directory.json`
 - `knowledge_bank/` - local policy library (see its README)
 - `templates/` + `static/` - analysis page and Knowledge Bank page
-- `tests/` - 80 tests in 6 files
+- `tests/` - 90 tests in 6 files
+- `Run_NorthStar.bat` / `Clean_NorthStar.bat` - one-click launch and one-click cleanup
+- `AGENTS.md` - the spec this file must satisfy; `Project_Prompt.md` - the original build brief (both were `.md.txt` until the user renamed them)
 
 Flow: form -> `POST /api/analyze` -> Pydantic -> address check -> finance -> market/policy lookup -> knowledge-bank read -> report assembly -> analysis trail written -> browser render.
 
@@ -31,7 +33,7 @@ Flow: form -> `POST /api/analyze` -> Pydantic -> address check -> finance -> mar
 - **Financial math is plain Python, never LLM-generated**, and is unit-tested so every number is auditable.
 - **Missing data is stated, never guessed.** ZIP-level misses fall back to state, then national, and say so. Checks that cannot be performed are reported as `unverified` rather than passing silently.
 - **The recommendation is rule-based and transparent**, with its reasons listed.
-- **Two conventions are supported for knowledge-bank ZIP folders.** `zips/<ZIP>/` is canonical; flat `<state>-<zip>/` is still read so notes from the standalone Lab 5 Skill keep working.
+- **Provenance is a structural guarantee, not a label.** `knowledge_bank/researched/` is writable only by the Skill and `knowledge_bank/user/` only by people, enforced in code rather than by convention - see the next section. Legacy flat `<state>-<zip>/` folders are still read so notes from the standalone Lab 5 Skill keep working.
 
 ## How the knowledge bank works
 
@@ -62,7 +64,7 @@ Writes are guarded by `safe_note_path`: `..`, drive letters, and absolute paths 
 
 ## Data Assumptions
 
-Market and policy records in `data/` are sample data shaped like public-data fields, not verified facts. Address-specific HOA, condo, and deed restrictions are treated as unknown unless a knowledge-bank note supplies them. `zip_directory.json` holds a small place directory plus a mainland ZIP-prefix-to-state table; unassigned prefixes deliberately produce no warning (fail open) rather than a false alarm. Notes in `knowledge_bank/` may be researched (Skill-generated, source-cited), user-provided, or a mix; the app does not distinguish provenance, so a note's own citations are the only trust signal.
+Market and policy records in `data/` are sample data shaped like public-data fields, not verified facts. Address-specific HOA, condo, and deed restrictions are treated as unknown unless a knowledge-bank note supplies them. `zip_directory.json` holds a small place directory plus a mainland ZIP-prefix-to-state table; unassigned prefixes deliberately produce no warning (fail open) rather than a false alarm. Notes in `knowledge_bank/` may be researched (Skill-generated, source-cited), user-provided, or a mix. The app *does* distinguish provenance - `describe_source` tags every note `researched`, `user`, or `legacy` from its root folder, and both the report and the Knowledge Bank page display that tag. Within a researched note, the note's own per-fact ✅ official / ⚠ secondary markers remain the finer-grained trust signal.
 
 ## Financial Model Notes
 
@@ -70,11 +72,13 @@ Loan amount, amortized payment, operating expenses, NOI, monthly and annual cash
 
 ## Current Status
 
-Complete and working. All 80 tests pass. The app has been verified in a browser end to end: analysis, the address-mismatch warnings, the Knowledge Bank page, adding a note through the form and watching it change that property's report, and the analysis trail.
+Complete and working. All 90 tests pass. The app has been verified in a browser end to end: analysis, the address-mismatch warnings, the Knowledge Bank page, adding a note through the form and watching it change that property's report, and the analysis trail.
 
 Bundled researched notes cover Austin (78704), Los Angeles (90026), and Brooklyn (11215), all in `knowledge_bank/researched/`. Los Angeles and Brooklyn have no built-in policy record, so those reports are driven entirely by the notes.
 
-The user's own Saint Charles, MO 63301 research (real property they're evaluating) is written locally at `knowledge_bank/researched/zips/63301/policy-notes.md` but deliberately kept out of git - the repo is public, and that note is tied to a real address and a recorded HOA document (`knowledge_bank/zips/63301/HOA_852771.pdf`, also untracked). Both stay local-only unless the user asks to publish them.
+The user's own Saint Charles, MO 63301 research (real property they're evaluating) is written locally at `knowledge_bank/researched/zips/63301/policy-notes.md` but deliberately kept out of git - the repo is public, and that note is tied to a real address and a recorded HOA document. The user later moved that document to `knowledge_bank/user/Zips/63301/HOA_852771.pdf` (note the capital Z - harmless on Windows, which is case-insensitive, but it would not match `user/zips/` on Linux or macOS). Both files are untracked and stay local-only unless the user asks to publish them.
+
+Two consequences of that move worth knowing: the `.pdf` was never read as a note anyway (only `.md`/`.txt` are), and `record_analysis` still writes new trails to `knowledge_bank/zips/<ZIP>/`, so the trail the user relocated into `user/Zips/63301/` will not be appended to again - a fresh one appears at the original path instead.
 
 ## Known Issues
 
@@ -93,20 +97,21 @@ The user's own Saint Charles, MO 63301 research (real property they're evaluatin
 
 Newest first. Each entry is one commit on `main`.
 
-1. **Fixed a real incident: Clean_NorthStar.bat's .venv removal could corrupt .venv, breaking Run_NorthStar.bat** - a user reported "after cleaning, I can't Run_NorthStar" after choosing to also remove `.venv`. Root cause, confirmed by reproduction: `rmdir /s /q` on Windows can partially delete when a file is locked (removed `pyvenv.cfg` and `Lib`, left `Scripts\python.exe`), and `Run_NorthStar.bat` only checked for `python.exe`, so it used the broken environment instead of rebuilding it. Fixed both sides: `Run_NorthStar.bat` now also requires `pyvenv.cfg` and self-heals regardless of cause; `Clean_NorthStar.bat` verifies its own removal succeeded and warns instead of leaving a silent partial state, and its cache cleanup no longer recurses into `.venv` at all (explicit allowlist only). See Traps.
-2. **Added Clean_NorthStar.bat for clearing generated files** - see the entry above for the fix that followed; original version removed Python cache and analysis trail logs after confirmation, with `.venv` removal as a separate optional step.
-3. **Split the knowledge bank into researched/ vs. user/ roots** - the user asked for a real trust boundary between AI-verified and human-typed notes. `researched/` is written only by the Skill (SKILL.md updated to match); `user/` is written by the in-app form (the old "researched"-style scope choice was removed from the form entirely) or by hand. `create_note` refuses to write into `researched/` even via a direct `folder` override. The three bundled sample notes moved to `researched/zips/{78704,90026,11215}/`. Also actually ran the Skill (via the Skill tool, with my own web search - no new API key needed) for the user's real address, cross-referencing a recorded HOA Master Indenture PDF they had on file; wrote the result to `researched/zips/63301/` but kept it and the PDF out of git since the repo is public.
-4. **README/agentic.md realignment + the research-request panel** - rewrote README.md and agentic.md end to end (they had drifted from the code and from each other by accretion), added a Mermaid flow diagram of the whole project, and closed a real gap the user found: since the app already has the address, `build_research_request` now hands the user a ready-to-paste Skill command instead of making them retype it, shown only when a note is missing or stale.
-5. **Knowledge-bank reorganization and traceability** - the folder had two competing layouts for the same scope (`zips/78704/` and flat `tx-78704/`) plus eleven placeholder READMEs the loader always skipped; consolidated to one hierarchy, added the per-ZIP analysis trail, and updated the project's `SKILL.md` to write into `zips/<zip>/` (the Lab 5 submitted copy is unchanged).
-6. **Knowledge bank as a first-class feature** - added `app/knowledge_bank.py`, the `/knowledge-bank` page, in-app note creation, HTML rendering of notes, staleness and citation counts, the machine-readable limits that correct the financial model, and the diligence checklist.
-7. **Lab 5 integration** - brought the three researched notes into the project and made their flag tables drive the report instead of displaying as text.
-8. **Static asset cache-busting** - `?v=<mtime>` so a cached `app.js` cannot make fixed code look broken.
-9. **Inline address validation** - the location check also runs on the form via `POST /api/location-check`.
-10. **Launcher clears port 8000** - stops a stale NorthStar server before starting, warns instead of killing anything that is not one.
-11. **Location consistency check** - `zip_directory.json` plus `check_location_consistency`; mismatches warn on the form, above the recommendation, and as a high risk.
-12. **Wrong-city policy fix** - a Saint Charles ZIP falling back to Missouri state data was showing a St. Louis example link; city-specific links now carry `applies_to_city` and are filtered unless the city matches.
-13. **Jurisdiction layering** - policy output merges city/county, state, and national records instead of picking one, with every flag and link tagged by jurisdiction.
-14. **Week 9 proposal alignment** - bundled the Skill into the repo and wired its output folders into the loader.
+1. **Documentation audit across every markdown file** - rewrote `README.md` against the actual source (the test count had drifted to 80 vs. the real 90; no top-level file except the app modules was documented; the analysis-trail location was missing from the folder diagram) and added a project tree, table of contents, and per-file test table. Then audited the rest: fixed the same stale count here, removed a direct contradiction in Data Assumptions (it claimed the app cannot distinguish note provenance, while How the knowledge bank works correctly described `describe_source` doing exactly that), corrected the HOA PDF path after the user moved it, and fixed four places where the bundled Skill's `README.md` still documented the pre-split `knowledge_bank/zips/<zip>/` output path while its own `SKILL.md` correctly said `researched/zips/<zip>/`. Also recorded the user's `.md.txt` -> `.md` renames of `AGENTS.md` and `Project_Prompt.md` in git.
+2. **Fixed a real incident: Clean_NorthStar.bat's .venv removal could corrupt .venv, breaking Run_NorthStar.bat** - a user reported "after cleaning, I can't Run_NorthStar" after choosing to also remove `.venv`. Root cause, confirmed by reproduction: `rmdir /s /q` on Windows can partially delete when a file is locked (removed `pyvenv.cfg` and `Lib`, left `Scripts\python.exe`), and `Run_NorthStar.bat` only checked for `python.exe`, so it used the broken environment instead of rebuilding it. Fixed both sides: `Run_NorthStar.bat` now also requires `pyvenv.cfg` and self-heals regardless of cause; `Clean_NorthStar.bat` verifies its own removal succeeded and warns instead of leaving a silent partial state, and its cache cleanup no longer recurses into `.venv` at all (explicit allowlist only). See Traps.
+3. **Added Clean_NorthStar.bat for clearing generated files** - see the entry above for the fix that followed; original version removed Python cache and analysis trail logs after confirmation, with `.venv` removal as a separate optional step.
+4. **Split the knowledge bank into researched/ vs. user/ roots** - the user asked for a real trust boundary between AI-verified and human-typed notes. `researched/` is written only by the Skill (SKILL.md updated to match); `user/` is written by the in-app form (the old "researched"-style scope choice was removed from the form entirely) or by hand. `create_note` refuses to write into `researched/` even via a direct `folder` override. The three bundled sample notes moved to `researched/zips/{78704,90026,11215}/`. Also actually ran the Skill (via the Skill tool, with my own web search - no new API key needed) for the user's real address, cross-referencing a recorded HOA Master Indenture PDF they had on file; wrote the result to `researched/zips/63301/` but kept it and the PDF out of git since the repo is public.
+5. **README/agentic.md realignment + the research-request panel** - rewrote README.md and agentic.md end to end (they had drifted from the code and from each other by accretion), added a Mermaid flow diagram of the whole project, and closed a real gap the user found: since the app already has the address, `build_research_request` now hands the user a ready-to-paste Skill command instead of making them retype it, shown only when a note is missing or stale.
+6. **Knowledge-bank reorganization and traceability** - the folder had two competing layouts for the same scope (`zips/78704/` and flat `tx-78704/`) plus eleven placeholder READMEs the loader always skipped; consolidated to one hierarchy, added the per-ZIP analysis trail, and updated the project's `SKILL.md` to write into `zips/<zip>/` (the Lab 5 submitted copy is unchanged).
+7. **Knowledge bank as a first-class feature** - added `app/knowledge_bank.py`, the `/knowledge-bank` page, in-app note creation, HTML rendering of notes, staleness and citation counts, the machine-readable limits that correct the financial model, and the diligence checklist.
+8. **Lab 5 integration** - brought the three researched notes into the project and made their flag tables drive the report instead of displaying as text.
+9. **Static asset cache-busting** - `?v=<mtime>` so a cached `app.js` cannot make fixed code look broken.
+10. **Inline address validation** - the location check also runs on the form via `POST /api/location-check`.
+11. **Launcher clears port 8000** - stops a stale NorthStar server before starting, warns instead of killing anything that is not one.
+12. **Location consistency check** - `zip_directory.json` plus `check_location_consistency`; mismatches warn on the form, above the recommendation, and as a high risk.
+13. **Wrong-city policy fix** - a Saint Charles ZIP falling back to Missouri state data was showing a St. Louis example link; city-specific links now carry `applies_to_city` and are filtered unless the city matches.
+14. **Jurisdiction layering** - policy output merges city/county, state, and national records instead of picking one, with every flag and link tagged by jurisdiction.
+15. **Week 9 proposal alignment** - bundled the Skill into the repo and wired its output folders into the loader.
 
 ## Run instructions
 

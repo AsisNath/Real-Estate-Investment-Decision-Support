@@ -39,7 +39,7 @@ property-policy-research/          ← the Skill (this is what you install)
 > is just the Skill itself — `SKILL.md` and `references/`. The example outputs
 > above shipped with the standalone Lab 5 package; in NorthStar, real researched
 > notes for the same three markets live at the project root in
-> `knowledge_bank/zips/{78704,90026,11215}/policy-notes.md` instead.
+> `knowledge_bank/researched/zips/{78704,90026,11215}/policy-notes.md` instead.
 
 ---
 
@@ -62,12 +62,17 @@ Then **start a new session** (skills load at session start) and just ask natural
 
 You do not need to name the Skill — Claude matches your request against the
 Skill's description and activates it automatically. Output is written to
-`knowledge_bank/zips/<zip>/policy-notes.md` under your current working folder.
+`knowledge_bank/researched/zips/<zip>/policy-notes.md` under your current
+working folder.
 
-> **Note for this project:** the copy of the Skill bundled with NorthStar writes
-> into the app's knowledge-bank hierarchy (`zips/<ZIP>/`). The standalone Lab 5
-> copy used a flat `<state>-<zip>/` folder; NorthStar still reads those, so notes
-> written by either version keep working.
+> **Why `researched/`:** NorthStar splits its knowledge bank into two roots.
+> `researched/` is written *only* by this Skill; `user/` holds notes a person
+> added by hand or through the app's form, and the app refuses to write into
+> `researched/` itself. That separation is what lets the app label a finding
+> AI-researched-and-cited rather than merely typed in, so this Skill must always
+> write under `researched/` and never under `user/`. The standalone Lab 5 copy
+> used a flat `<state>-<zip>/` folder; NorthStar still reads those as a legacy
+> source, so older notes keep working.
 
 ### Claude Cowork / claude.ai
 
@@ -93,9 +98,10 @@ Slope, Brooklyn?"* — the Skill triggers automatically. Make sure **web search 
 enabled** for the conversation.
 
 **Cowork note:** Cowork works inside a folder you point it at. Open it on the
-folder where you want results, and the `knowledge_bank/zips/<zip>/policy-notes.md`
-output lands there. In claude.ai (no file system), the policy note is produced
-as a document in the chat instead — same content, no saved file.
+folder where you want results, and the
+`knowledge_bank/researched/zips/<zip>/policy-notes.md` output lands there. In
+claude.ai (no file system), the policy note is produced as a document in the
+chat instead — same content, no saved file.
 
 **No-upload fallback:** in Cowork you can skip packaging entirely — put the
 `property-policy-research` folder inside your working folder and say *"Follow
@@ -121,7 +127,8 @@ your-project\
 ├── property-policy-research\
 │   ├── SKILL.md
 │   └── references\policy-topics.md
-└── knowledge_bank\          ← outputs appear here
+└── knowledge_bank\
+    └── researched\zips\<zip>\policy-notes.md   ← outputs appear here
 ```
 
 **Step 3 — Register it in `AGENTS.md`.**
@@ -163,14 +170,22 @@ Every bullet in a policy note follows this pattern:
 >   — as of 2026-07-19 ✅ official
 
 And every note ends with a High-Attention Flags table (HIGH / MEDIUM / INFO / LOW)
-summarizing what could materially change the investment decision. See the two
-examples in `knowledge_bank/` — Austin and Los Angeles are near-opposite
-regulatory environments, which is what the Skill is built to surface.
+summarizing what could materially change the investment decision. When the
+research produces a clear number or yes/no answer, the note also closes with a
+`## NorthStar Machine-Readable Summary` block (`rent_growth_cap_percent`,
+`short_term_rental_allowed`, `security_deposit_cap_months`) that NorthStar checks
+against the investor's own assumptions — see Step 5b of `SKILL.md`.
+
+For worked examples, read the bundled notes at
+`knowledge_bank/researched/zips/78704` (Austin) and `.../90026` (Los Angeles):
+near-opposite regulatory environments, which is exactly what the Skill is built
+to surface.
 
 ## Customizing
 
-- **Fixed output location:** by default output lands in `knowledge_bank/` under
-  the current working folder. To pin it to one path, edit Step 5 of `SKILL.md`.
+- **Fixed output location:** by default output lands in
+  `knowledge_bank/researched/` under the current working folder. To pin it to one
+  path, edit Step 5 of `SKILL.md`.
 - **More topics** (e.g., property-tax rules, zoning, insurance mandates): add a
   numbered section to the Output Format in `SKILL.md` and a matching entry with
   query patterns in `references/policy-topics.md`.

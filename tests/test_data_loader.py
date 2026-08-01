@@ -100,7 +100,19 @@ def test_location_check_passes_for_matching_address():
 
     assert check["status"] == "ok"
     assert check["warnings"] == []
-    assert check["expected_county"] == "St. Charles County"
+    assert check["expected_county"] == "Saint Charles"
+
+
+def test_location_check_covers_zips_never_added_by_hand():
+    """The bundled dataset covers every US ZIP, not a hand-maintained handful."""
+    for city, state, zip_code in (
+        ("Maryland Heights", "MO", "63043"),
+        ("Beverly Hills", "CA", "90210"),
+        ("Bloomington", "IN", "47401"),
+        ("Cheyenne", "WY", "82001"),
+    ):
+        check = data_loader.check_location_consistency(city, state, zip_code)
+        assert check["status"] == "ok", f"{city} {zip_code} -> {check}"
 
 
 def test_location_check_accepts_saint_spelling():
@@ -113,7 +125,7 @@ def test_location_check_flags_wrong_city():
     check = data_loader.check_location_consistency("Saint Louis", "MO", "63301")
 
     assert check["status"] == "warning"
-    assert "63301 is St. Charles" in check["warnings"][0]
+    assert "63301 is Saint Charles" in check["warnings"][0]
 
 
 def test_location_check_flags_wrong_state():
@@ -130,13 +142,14 @@ def test_location_check_flags_malformed_zip():
     assert "not a five-digit" in check["warnings"][0]
 
 
-def test_location_check_reports_unknown_zip_as_unverified():
-    check = data_loader.check_location_consistency("Bloomington", "IN", "47401")
+def test_location_check_reports_unassigned_zip_as_unverified():
+    # 42900 is not an assigned US ZIP, so neither the city nor the state can be
+    # confirmed - and the app says so rather than guessing.
+    check = data_loader.check_location_consistency("Nowhere", "KY", "42900")
 
-    # The prefix confirms Indiana, but the exact city cannot be checked.
     assert check["status"] == "unverified"
     assert check["warnings"] == []
-    assert "not in the built-in location directory" in check["unverified"][0]
+    assert any("not in the built-in location directory" in u for u in check["unverified"])
 
 
 def test_state_for_zip_prefix_ranges():

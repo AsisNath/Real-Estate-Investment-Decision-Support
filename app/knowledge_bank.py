@@ -141,7 +141,10 @@ def parse_policy_note(content: str) -> dict[str, Any]:
     diligence: list[str] = []
     for raw_line in content.splitlines():
         line = raw_line.strip()
-        if not line.startswith(("-", "*")):
+        # A real bullet is "- text" or "* text". A line opening with bold
+        # markup ("**Method:** ...") also starts with "*" but is a field, not a
+        # bullet - requiring whitespace after the marker keeps those out.
+        if not re.match(r"[-*]\s", line):
             continue
         lowered = line.lower()
         if any(hint in lowered for hint in _DILIGENCE_HINTS):

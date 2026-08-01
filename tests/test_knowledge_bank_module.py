@@ -56,6 +56,20 @@ def test_parses_diligence_items():
     assert not any("**" in item for item in diligence)
 
 
+def test_bold_header_lines_are_not_mistaken_for_diligence_bullets():
+    """A line opening with "**" starts with "*" but is a field, not a bullet."""
+    note = (
+        "# Policy Notes - Somewhere\n\n"
+        "**Method:** Web search; some facts tagged secondary, confirm with the agency.\n\n"
+        "- A genuine bullet: unverified for this parcel, obtain the recorded CC&Rs.\n"
+    )
+
+    diligence = parse_policy_note(note)["diligence"]
+
+    assert len(diligence) == 1
+    assert diligence[0].startswith("A genuine bullet")
+
+
 def test_computes_note_age_and_staleness():
     parsed = parse_policy_note(NOTE)
 

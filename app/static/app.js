@@ -228,29 +228,101 @@ function sourceLinks(links) {
     .join("");
 }
 
-function researchRequestPanel(researchRequest) {
-  if (!researchRequest || researchRequest.status === "current") return "";
+function manualResearchFallback(researchRequest, lead) {
+  return `
+    <p>${lead}</p>
+    <div class="research-prompt-box">
+      <code id="researchPromptText">${escapeHtml(researchRequest.prompt)}</code>
+      <button type="button" class="secondary-action" id="copyResearchPrompt">Copy</button>
+    </div>
+  `;
+}
 
+function researchRequestPanel(researchRequest) {
+  if (!researchRequest) return "";
+
+  const auto = researchRequest.auto || {};
   const isMissing = researchRequest.status === "missing";
+
+  // The app researched this address itself and is still working.
+  if (auto.state === "running") {
+    return `
+      <section class="report-section research-request running" id="researchPanel">
+        <div class="section-title">
+          <div>
+            <h3>Researching local rental policy now</h3>
+            <p>${escapeHtml(auto.message)} The rest of this report is already
+            complete and does not depend on it. When the research finishes, the
+            findings are saved to the Knowledge Bank and folded into the policy
+            flags the next time you run this analysis.</p>
+          </div>
+        </div>
+        <p class="research-live" id="researchLive">Working&hellip;</p>
+      </section>
+    `;
+  }
+
+  // It finished on an earlier run, or a note was already on file.
+  if (auto.state === "done" && researchRequest.status === "current") return "";
+
+  if (auto.state === "done") {
+    return `
+      <section class="report-section research-request done" id="researchPanel">
+        <div class="section-title">
+          <div>
+            <h3>A researched policy note is now on file</h3>
+            <p>Run the analysis again to fold it into the policy flags, risks,
+            and assumption checks above. File:
+            <code>${escapeHtml(auto.relative_path || "")}</code></p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  if (researchRequest.status === "current") return "";
+
   const heading = isMissing
     ? "No researched policy note for this address yet"
     : "This researched note is due for a refresh";
-  const explanation = isMissing
-    ? "The address is already filled in below. Paste this into a Claude Code, Cowork, or claude.ai chat with web search enabled, and the property-policy-research Skill will research this exact address and save the results here."
-    : "A policy note exists for this location, but it is older than the 120-day freshness window. Paste this into a chat with web search enabled to refresh it.";
+
+  // Research is possible but something went wrong, or was declined.
+  if (auto.state === "failed") {
+    return `
+      <section class="report-section research-request failed" id="researchPanel">
+        <div class="section-title">
+          <div>
+            <h3>Automatic policy research did not complete</h3>
+            <p>${escapeHtml(auto.message)}</p>
+          </div>
+        </div>
+        <button type="button" class="secondary-action" id="retryResearch">Try the research again</button>
+        ${manualResearchFallback(
+          researchRequest,
+          "Or research it by hand: paste this into a Claude Code, Cowork, or claude.ai chat with web search enabled."
+        )}
+      </section>
+    `;
+  }
+
+  // No key, no package, or the kill switch is on: the original manual flow.
+  const unavailableReason =
+    auto.state === "unavailable" ? auto.message : (auto.availability || {}).reason;
 
   return `
-    <section class="report-section research-request ${researchRequest.status}">
+    <section class="report-section research-request ${researchRequest.status}" id="researchPanel">
       <div class="section-title">
         <div>
           <h3>${heading}</h3>
-          <p>${explanation}</p>
+          ${unavailableReason ? `<p class="muted">Automatic research is off: ${escapeHtml(unavailableReason)}</p>` : ""}
         </div>
       </div>
-      <div class="research-prompt-box">
-        <code id="researchPromptText">${escapeHtml(researchRequest.prompt)}</code>
-        <button type="button" class="secondary-action" id="copyResearchPrompt">Copy</button>
-      </div>
+      ${manualResearchFallback(
+        researchRequest,
+        isMissing
+          ? "The address is already filled in below. Paste this into a Claude Code, Cowork, or claude.ai chat with web search enabled, and the property-policy-research Skill will research this exact address and save the results here."
+          : "A policy note exists for this location, but it is older than the 120-day freshness window. Paste this into a chat with web search enabled to refresh it."
+      )}
     </section>
   `;
 }
@@ -599,6 +671,77 @@ function renderReport(report) {
       }, 2000);
     });
   }
+
+  wireResearchPanel(report);
+}
+
+// Only one research poll may be alive at a time: re-running the analysis
+// replaces the panel the previous poll was writing into.
+let researchPoll = null;
+
+function stopResearchPoll() {
+  if (researchPoll) {
+    clearInterval(researchPoll);
+    researchPoll = null;
+  }
+}
+
+function wireResearchPanel(report) {
+  stopResearchPoll();
+
+  const retry = document.querySelector("#retryResearch");
+  if (retry) {
+    retry.addEventListener("click", async () => {
+      retry.disabled = true;
+      retry.textContent = "Starting…";
+      try {
+        const response = await fetch("/api/research/retry", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(collectPayload()),
+        });
+        if (!response.ok) throw new Error(await response.text());
+        report.research_request.auto = await response.json();
+        renderReport(report);
+      } catch (error) {
+        retry.disabled = false;
+        retry.textContent = "Try the research again";
+      }
+    });
+  }
+
+  if ((report.research_request.auto || {}).state !== "running") return;
+
+  const zip = report.property.zip_code;
+  const startedAt = Date.now();
+  let dots = 0;
+
+  researchPoll = setInterval(async () => {
+    const live = document.querySelector("#researchLive");
+    if (!live) {
+      stopResearchPoll();
+      return;
+    }
+    dots = (dots + 1) % 4;
+    const elapsed = Math.round((Date.now() - startedAt) / 1000);
+    live.textContent = `Working${".".repeat(dots)} (${elapsed}s elapsed)`;
+
+    try {
+      const response = await fetch(
+        `/api/research/status?zip_code=${encodeURIComponent(zip)}`
+      );
+      if (!response.ok) return;
+      const state = await response.json();
+      if (state.state === "running") return;
+
+      stopResearchPoll();
+      report.research_request.auto = state;
+      renderReport(report);
+    } catch (error) {
+      // A transient fetch failure is not worth tearing the panel down for;
+      // the next tick tries again.
+    }
+  }, 3000);
 }
 
 async function loadSamples() {

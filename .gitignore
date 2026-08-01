@@ -12,6 +12,10 @@ __pycache__/
 # has exactly two roots: researched/ and user/.
 logs/
 
+# Secrets. The API key that powers automatic policy research lives here.
+# `.env.example` is the committed template; `.env` itself never is.
+.env
+
 # OS
 Thumbs.db
 .DS_Store

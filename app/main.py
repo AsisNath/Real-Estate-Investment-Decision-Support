@@ -23,6 +23,11 @@ from app.knowledge_bank import (
     record_analysis,
     scan_knowledge_bank,
 )
+from app.policy_research import (
+    availability as research_availability,
+    request_research,
+    status as research_status,
+)
 from app.schemas import (
     AnalysisRequest,
     HealthResponse,
@@ -158,7 +163,48 @@ def analyze_property(payload: AnalysisRequest):
         knowledge_bank_context,
         location_check,
     )
+
+    # If this location has no researched policy note, start one now. This returns
+    # immediately - the research itself runs in a background thread and the page
+    # polls /api/research/status - and it is a no-op when a note already exists,
+    # when a pass is already running, or when no API key is configured.
+    if report["research_request"]["status"] in {"missing", "stale"}:
+        report["research_request"]["auto"] = request_research(
+            payload.address,
+            payload.city,
+            payload.state,
+            payload.zip_code,
+        )
+    else:
+        report["research_request"]["auto"] = research_status(payload.zip_code)
+
     # Leave an audit trail beside that ZIP's notes so the sources behind this
     # recommendation can be traced later.
     report["analysis_log"] = record_analysis(report)
     return report
+
+
+@app.get("/api/research/status")
+def research_status_endpoint(zip_code: str):
+    """Poll target while a background research pass runs."""
+    return research_status(zip_code)
+
+
+@app.post("/api/research/retry")
+def research_retry(payload: AnalysisRequest):
+    """Run research again after a failure, or refresh a note on demand.
+
+    Automatic research refuses to repeat a failed call on its own, because a bad
+    key would otherwise be retried - and billed - on every analysis. This is the
+    explicit "try that again" the user asks for.
+    """
+    ready = research_availability()
+    if not ready["available"]:
+        raise HTTPException(status_code=400, detail=ready["reason"])
+    return request_research(
+        payload.address,
+        payload.city,
+        payload.state,
+        payload.zip_code,
+        force=True,
+    )

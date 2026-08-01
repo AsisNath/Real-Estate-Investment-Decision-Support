@@ -49,6 +49,8 @@ The app serves two pages:
 
 **Requirements:** Python 3.11+ and Windows (the `.bat` launchers are Windows-specific; the app itself is cross-platform).
 
+**Optional — automatic policy research.** Copy `.env.example` to `.env` and add an [Anthropic API key](https://console.anthropic.com/settings/keys). The app then researches local rental rules by itself for any address that has no note yet, instead of asking you to run the research Skill by hand. Everything else works fully offline without it — see [When no note exists yet](#when-no-note-exists-yet--automatic-research).
+
 > **If a code change doesn't appear in the browser,** a stale server process is almost always the cause — a running Python process keeps the code *and* JSON data it loaded at startup. `Run_NorthStar.bat` clears port 8000 automatically. To do it manually:
 >
 > ```powershell
@@ -59,7 +61,7 @@ The app serves two pages:
 
 ## How it works
 
-Two connected flows share one folder. The **application flow** runs every time you click Analyze — always local, always deterministic. The **research flow** is manual and only needed when you want fresh, live-researched policy facts for an address.
+Two connected flows share one folder. The **application flow** runs every time you click Analyze — always local, always deterministic, and complete on its own. The **research flow** fills in live policy facts for addresses that have none; with an API key configured it runs by itself in the background, and without one it falls back to a copy-and-paste prompt.
 
 ```mermaid
 flowchart TD
@@ -71,28 +73,34 @@ flowchart TD
         A --> B --> C --> D
     end
 
-    subgraph research["Research flow — manual, needs internet"]
-        E["Copy the ready-made prompt<br/><small>address already filled in</small>"]
-        F["Paste into Claude<br/><small>Claude Code, Cowork, or claude.ai</small>"]
-        G["property-policy-research Skill<br/><small>web search, verified against .gov sources</small>"]
-        E --> F --> G
+    subgraph research["Research flow — background, needs an API key + internet"]
+        E["Background research thread<br/><small>starts itself when a note is missing or stale</small>"]
+        G["property-policy-research workflow<br/><small>web search, verified against .gov sources</small>"]
+        E --> G
     end
 
-    KB[("knowledge_bank/<br/><small>researched/ + user/ — read-only to the app</small>")]
+    subgraph manual["Fallback — no key, no internet, or research failed"]
+        F["Copy the ready-made prompt<br/><small>address already filled in</small>"]
+        F2["Paste into Claude<br/><small>Claude Code, Cowork, or claude.ai</small>"]
+        F --> F2 --> G
+    end
+
+    KB[("knowledge_bank/<br/><small>researched/ + user/</small>")]
     LOG[("logs/<br/><small>analysis trails — app output</small>")]
     H["Knowledge Bank page<br/><small>browse, add notes by hand</small>"]
 
     C -->|reads matching notes| KB
     D -->|writes analysis trail| LOG
     D -.->|only when no note exists, or it is stale| E
+    E -.->|unavailable or failed| F
     G -->|writes policy-notes.md| KB
     H -->|browse / add| KB
     H -->|inspect trails| LOG
 ```
 
-Note the asymmetry: the app **only ever reads** `knowledge_bank/`. Everything it writes goes to `logs/`. That is what keeps the knowledge bank to exactly two roots — one for AI-researched notes, one for yours.
+The financial model **never** depends on the research flow. Every number in the report is computed locally from the values you entered, and the report is complete before research starts. Research only adds policy findings, and only ever writes into `researched/` — your own notes in `user/` are never touched by it.
 
-**Why the Skill isn't called automatically:** it needs an LLM agent loop with live web search — a fundamentally different runtime than this deterministic FastAPI process. Wiring it in would also break the project's founding constraint of no paid APIs and full offline reliability. What the app *does* do is remove the busywork: it already knows your address, so it hands you a ready-to-paste command instead of making you retype one.
+**Why the same Skill file drives both paths:** the automatic researcher sends `.claude/skills/property-policy-research/SKILL.md` to the model as its system prompt. Editing that Skill changes the automatic path and the copy-and-paste path together, so the two cannot drift apart and produce differently-shaped notes.
 
 ---
 
@@ -197,6 +205,8 @@ NorthStar Property Investment Consulting/
 | `GET` | `/api/knowledge-bank/note?path=` | One note, rendered as HTML |
 | `GET` | `/api/knowledge-bank/trace?path=` | One analysis trail |
 | `POST` | `/api/knowledge-bank/notes` | Save a note the user wrote |
+| `GET` | `/api/research/status?zip_code=` | Poll a background research pass |
+| `POST` | `/api/research/retry` | Re-run research after a failure |
 | `GET` | `/api/health` | Health check |
 
 ### What the report contains
@@ -297,13 +307,43 @@ Notes are also scanned for lines containing "unverified", "confirm with", or "ob
 
 `http://localhost:8000/knowledge-bank` scans the folder on every request, so anything added appears immediately. Each note shows its scope, research date and staleness, flag counts by severity, official-versus-secondary citation counts, and diligence count. Clicking through renders the note as HTML so official source links are clickable.
 
-### When no note exists yet
+### Where policy facts come from when there is no note
 
-The app already has the address you entered, so it doesn't make you retype it. When a property has no matching note — or its only note is stale — the report shows a ready-to-paste command with your exact address filled in:
+A common point of confusion: the report shows Policy Restrictions and Sources even when it also says no researched note exists. Those are two different layers, and the report always tells you which one it used.
+
+| Layer | Source | Shown as |
+|---|---|---|
+| Knowledge-bank notes | `knowledge_bank/researched/` and `user/` | Named files under "Knowledge Bank", with their research dates |
+| Built-in policy records | `data/policy_data.json`, shipped with the app | "Jurisdictions reviewed" and the match level |
+
+The built-in layer is a **hand-curated jurisdiction table**, not a live lookup. It resolves broad-to-specific — ZIP, then city, then state, then a generic national record — and the report states which level it landed on. So an unresearched address in Maryland Heights still shows Missouri landlord-tenant rules, tagged as a **state-level** match, with a plain "state-level only" note explaining that nothing city-specific was found. Nothing is invented: a miss is reported as a miss.
+
+Automatic research fills the more specific layer so you stop relying on the broad one.
+
+### When no note exists yet — automatic research
+
+When a property has no matching note, or its only note is stale, **the app researches it for itself**. You do not have to run anything. Your only job is dropping documents you already have — an HOA declaration, a lease, a city notice — into `knowledge_bank/user/Zips/<zip>/`.
+
+To turn it on once:
+
+```bash
+cp .env.example .env
+```
+
+Then put an [Anthropic API key](https://console.anthropic.com/settings/keys) in that file and restart the app. `.env` is git-ignored, so the key never reaches the repository.
+
+What happens on the next analysis of an unresearched address:
+
+1. The report renders immediately and completely — research never blocks it.
+2. A panel says **"Researching local rental policy now"** and ticks a live timer. A real pass makes roughly a dozen web searches and takes one to three minutes.
+3. The finished note is saved to `knowledge_bank/researched/zips/<zip>/policy-notes.md` — the same file, in the same format, the Skill would have written.
+4. Run the analysis again and the findings feed the policy flags, high-attention risks, diligence checklist, and assumption conflicts.
+
+**Cost and failure behaviour.** Each new address costs roughly one Opus request with web search. A note is written once and reused forever, so the same ZIP is never re-billed, and a failed call is remembered rather than retried on every analysis — there is an explicit **Try the research again** button instead. If the key is missing or rejected, the machine is offline, or the reply doesn't look like a policy note, **nothing is saved** and the panel falls back to the original copy-and-paste prompt with your address already filled in:
 
 > Run policy diligence on 250 5th Ave, Brooklyn, NY 11215.
 
-Click **Copy**, paste it into a Claude chat with web search enabled, and the Skill writes a note back into `knowledge_bank/researched/`. Your next analysis of that property picks it up automatically. When a fresh note already exists, this panel doesn't appear.
+To keep the app fully offline — for a demo with no wifi, say — set `NORTHSTAR_DISABLE_AUTO_RESEARCH=1` in `.env`. The test suite sets it automatically, so running `pytest` can never cost you anything.
 
 ### Bundled researched notes
 

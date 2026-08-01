@@ -573,6 +573,33 @@ select:focus {
   background: #fffdf5;
 }
 
+.research-request.running {
+  border-left-color: var(--blue);
+  background: #f4f9ff;
+}
+
+.research-request.done {
+  border-left-color: var(--green, #2f7d4f);
+  background: #f5fbf7;
+}
+
+.research-request.failed {
+  border-left-color: var(--amber);
+  background: #fffdf5;
+}
+
+.research-live {
+  margin: 12px 0 0;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+  color: #3d5871;
+}
+
+.research-request .secondary-action + .research-prompt-box,
+.research-request p + .research-prompt-box {
+  margin-top: 10px;
+}
+
 .research-prompt-box {
   display: flex;
   flex-wrap: wrap;

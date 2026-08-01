@@ -91,14 +91,27 @@ def test_trace_files_are_not_read_as_policy_notes(tmp_path, monkeypatch):
 
 
 def test_scan_lists_traces_separately(tmp_path):
-    record_analysis(REPORT, root=tmp_path)
-    (tmp_path / "zips" / "46202" / "hoa.md").write_text("# HOA note", encoding="utf-8")
+    kb, logs = tmp_path / "knowledge_bank", tmp_path / "logs"
+    record_analysis(REPORT, root=logs)
+    (kb / "user" / "zips" / "46202").mkdir(parents=True)
+    (kb / "user" / "zips" / "46202" / "hoa.md").write_text("# HOA note", encoding="utf-8")
 
-    inventory = scan_knowledge_bank(tmp_path)
+    inventory = scan_knowledge_bank(kb, logs_root=logs)
 
     assert [note["name"] for note in inventory["notes"]] == ["hoa.md"]
     assert [trace["name"] for trace in inventory["traces"]] == [ANALYSIS_LOG_NAME]
     assert inventory["traces"][0]["entry_count"] == 1
+
+
+def test_trail_never_lands_inside_the_knowledge_bank(tmp_path):
+    """The knowledge bank must keep exactly two roots: researched/ and user/."""
+    kb, logs = tmp_path / "knowledge_bank", tmp_path / "logs"
+    kb.mkdir()
+
+    record_analysis(REPORT, root=logs)
+
+    assert list(kb.rglob("*")) == [], "an analysis wrote into the knowledge bank"
+    assert (logs / "zips" / "46202" / ANALYSIS_LOG_NAME).exists()
 
 
 def test_read_trace_returns_rendered_html(tmp_path):

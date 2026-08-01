@@ -14,7 +14,7 @@ echo %CD%
 echo.
 echo This removes files NorthStar regenerates automatically:
 echo   - Python cache folders (app\__pycache__, tests\__pycache__, .pytest_cache)
-echo   - Analysis trail logs (knowledge_bank\...\_analysis-log.md)
+echo   - Analysis trail logs (logs\zips\...\_analysis-log.md)
 echo.
 echo It will NEVER delete your policy notes, PDFs, or any other
 echo file you added yourself (knowledge_bank\researched, knowledge_bank\user,
@@ -25,7 +25,7 @@ echo.
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$targets = @();" ^
     "foreach ($p in @('app\__pycache__','tests\__pycache__','.pytest_cache')) { if (Test-Path $p) { $targets += Get-Item $p } };" ^
-    "$logs = @(); if (Test-Path 'knowledge_bank') { $logs = Get-ChildItem -Path 'knowledge_bank' -Recurse -Filter '_analysis-log.md' -File -ErrorAction SilentlyContinue };" ^
+    "$logs = @(); if (Test-Path 'logs') { $logs = Get-ChildItem -Path 'logs' -Recurse -Filter '_analysis-log.md' -File -ErrorAction SilentlyContinue };" ^
     "$dirBytes = ($targets | ForEach-Object { (Get-ChildItem $_.FullName -Recurse -File -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum } | Measure-Object -Sum).Sum;" ^
     "$logBytes = ($logs | Measure-Object Length -Sum).Sum;" ^
     "$totalMB = [math]::Round((($dirBytes + $logBytes)) / 1MB, 2);" ^
@@ -51,7 +51,7 @@ for %%D in ("app\__pycache__" "tests\__pycache__" ".pytest_cache") do (
 )
 
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "if (Test-Path 'knowledge_bank') { Get-ChildItem -Path 'knowledge_bank' -Recurse -Filter '_analysis-log.md' -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue }" ^
+    "if (Test-Path 'logs') { Get-ChildItem -Path 'logs' -Recurse -Filter '_analysis-log.md' -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue }" ^
     < NUL
 
 echo.

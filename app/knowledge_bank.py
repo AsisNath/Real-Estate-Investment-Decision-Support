@@ -18,6 +18,12 @@ from typing import Any
 BASE_DIR = Path(__file__).resolve().parent.parent
 KNOWLEDGE_BANK_DIR = BASE_DIR / "knowledge_bank"
 
+# Analysis trails live outside the knowledge bank on purpose. The knowledge bank
+# holds policy knowledge the app *reads* and has exactly two roots (researched/
+# and user/); a trail is an audit record of what the app *did*, which is a
+# different kind of thing and would otherwise appear as a third root.
+LOGS_DIR = BASE_DIR / "logs"
+
 NOTE_SUFFIXES = {".md", ".txt"}
 MAX_NOTE_BYTES = 200_000
 STALE_AFTER_DAYS = 120
@@ -235,8 +241,15 @@ def _is_note(path: Path) -> bool:
     )
 
 
-def scan_knowledge_bank(root: Path | None = None) -> dict[str, Any]:
-    """Inventory every note in the knowledge bank, whoever created it."""
+def scan_knowledge_bank(
+    root: Path | None = None,
+    logs_root: Path | None = None,
+) -> dict[str, Any]:
+    """Inventory every note in the knowledge bank, plus the analysis trails.
+
+    Notes come from `root` (the knowledge bank); trails come from `logs_root`,
+    which is a separate directory so the knowledge bank keeps exactly two roots.
+    """
     root = root or KNOWLEDGE_BANK_DIR
     notes: list[dict[str, Any]] = []
 
@@ -272,13 +285,16 @@ def scan_knowledge_bank(root: Path | None = None) -> dict[str, Any]:
                 }
             )
 
+    # Trails are scanned from the logs directory, not the knowledge bank, so the
+    # knowledge bank keeps exactly two roots.
     traces: list[dict[str, Any]] = []
-    if root.exists():
-        for path in sorted(root.rglob(f"{TRACE_PREFIX}*")):
+    logs_root = logs_root or LOGS_DIR
+    if logs_root.exists():
+        for path in sorted(logs_root.rglob(f"{TRACE_PREFIX}*")):
             if not path.is_file() or path.suffix.lower() not in NOTE_SUFFIXES:
                 continue
             content = path.read_text(encoding="utf-8", errors="ignore")
-            relative = path.relative_to(root)
+            relative = path.relative_to(logs_root)
             traces.append(
                 {
                     "relative_path": relative.as_posix(),
@@ -291,6 +307,7 @@ def scan_knowledge_bank(root: Path | None = None) -> dict[str, Any]:
 
     return {
         "folder_path": str(root),
+        "logs_path": str(logs_root),
         "note_count": len(notes),
         "notes": notes,
         "traces": traces,
@@ -301,8 +318,12 @@ def scan_knowledge_bank(root: Path | None = None) -> dict[str, Any]:
 
 
 def read_trace(relative_path: str, root: Path | None = None) -> dict[str, Any]:
-    """Read an app-written trace file so the user can inspect the audit trail."""
-    root = root or KNOWLEDGE_BANK_DIR
+    """Read an app-written trace file so the user can inspect the audit trail.
+
+    `root` is the logs directory, not the knowledge bank - trails live outside
+    it so the knowledge bank keeps exactly two roots.
+    """
+    root = root or LOGS_DIR
     path = safe_note_path(relative_path, root)
     if not path.exists() or not path.is_file() or not is_trace_file(path.name):
         raise FileNotFoundError(relative_path)
@@ -319,14 +340,18 @@ def read_trace(relative_path: str, root: Path | None = None) -> dict[str, Any]:
 
 
 def record_analysis(report: dict[str, Any], root: Path | None = None) -> str | None:
-    """Append what an analysis actually used to a log beside that ZIP's notes.
+    """Append what an analysis actually used to that ZIP's audit trail.
 
     This is the traceability record: months later the user can open the folder
     for a ZIP and see which market record, which policy record, and which notes
     produced a given recommendation. Never raises - a failed write must not
     break an analysis.
+
+    `root` is the logs directory. Trails deliberately do not live in the
+    knowledge bank: that folder holds policy knowledge the app reads and has
+    exactly two roots (researched/ and user/), while this is app output.
     """
-    root = root or KNOWLEDGE_BANK_DIR
+    root = root or LOGS_DIR
     try:
         prop = report.get("property", {})
         zip_code = re.sub(r"[^0-9]", "", str(prop.get("zip_code", "")))[:5]

@@ -53,11 +53,13 @@ Folders are created on demand — only ones that hold a note exist.
 
 Older notes in a flat `<state>-<zip>/` folder (for example `ny-11215/`, from before this split existed) are still read, tagged as a legacy source, so nothing breaks if you have them.
 
-## Analysis trail (`_analysis-log.md`)
+## Analysis trail — lives in `logs/`, not here
 
-Every time you analyze a property, NorthStar appends a record to `zips/<ZIP>/_analysis-log.md` (unprefixed — the trail sits outside the researched/user split, since it's a record of what the app did, not a policy input): the address, the recommendation, which market and policy records matched, which notes were read, and which flags fired. That is the traceability record — months later you can open the folder for a ZIP and see exactly what produced a past recommendation.
+Every time you analyze a property, NorthStar appends a record to **`logs/zips/<ZIP>/_analysis-log.md`** at the project root: the address, the recommendation, which market and policy records matched, which notes were read, and which flags fired. Months later you can open the folder for a ZIP and see exactly what produced a past recommendation.
 
-**Files beginning with `_` are written by the app and are never read back into a report.** Do not name your own notes with a leading underscore. You can delete a log at any time; it is a record, not an input.
+It is deliberately **not** in this folder. The knowledge bank holds policy knowledge the app *reads*, and has exactly two roots. A trail records what the app *did* — a different kind of thing, and putting it here would add a confusing third root. A test enforces the separation, failing if an analysis writes anything into the knowledge bank.
+
+**Files beginning with `_` are never read back into a report.** Do not name your own notes with a leading underscore. You can delete a log at any time; it is a record, not an input.
 
 ## What makes a note do more than display
 

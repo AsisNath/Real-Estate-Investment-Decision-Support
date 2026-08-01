@@ -78,15 +78,19 @@ flowchart TD
         E --> F --> G
     end
 
-    KB[("knowledge_bank/<br/><small>plain .md files, shared by both flows</small>")]
+    KB[("knowledge_bank/<br/><small>researched/ + user/ — read-only to the app</small>")]
+    LOG[("logs/<br/><small>analysis trails — app output</small>")]
     H["Knowledge Bank page<br/><small>browse, add notes by hand</small>"]
 
     C -->|reads matching notes| KB
-    D -->|writes analysis trail| KB
+    D -->|writes analysis trail| LOG
     D -.->|only when no note exists, or it is stale| E
     G -->|writes policy-notes.md| KB
-    H -->|browse / add / inspect| KB
+    H -->|browse / add| KB
+    H -->|inspect trails| LOG
 ```
+
+Note the asymmetry: the app **only ever reads** `knowledge_bank/`. Everything it writes goes to `logs/`. That is what keeps the knowledge bank to exactly two roots — one for AI-researched notes, one for yours.
 
 **Why the Skill isn't called automatically:** it needs an LLM agent loop with live web search — a fundamentally different runtime than this deterministic FastAPI process. Wiring it in would also break the project's founding constraint of no paid APIs and full offline reliability. What the app *does* do is remove the busywork: it already knows your address, so it hands you a ready-to-paste command instead of making you retype one.
 
@@ -115,7 +119,7 @@ NorthStar Property Investment Consulting/
 │       └── styles.css            Dashboard styling
 │
 ├── tests/                        ── TEST SUITE ──────────────────────────
-│   └── (6 files, 90 tests)       Mirrors the app modules; see Testing below
+│   └── (6 files, 91 tests)       Mirrors the app modules; see Testing below
 │
 ├── data/                         ── BUNDLED REFERENCE DATA ──────────────
 │   ├── market_data.json          Rent/value/tax context by ZIP, state, national
@@ -127,6 +131,10 @@ NorthStar Property Investment Consulting/
 │   ├── researched/               Written only by the AI research Skill
 │   ├── user/                     Written by you, via the app or by hand
 │   └── README.md                 How the two roots work
+│                                 (exactly two roots - nothing else lives here)
+│
+├── logs/                         ── APP OUTPUT (git-ignored) ────────────
+│   └── zips/<ZIP>/               Analysis trails: what each run actually used
 │
 ├── docs/                         ── PROJECT DOCUMENTATION ───────────────
 │   ├── Project_Prompt.md         The original build specification
@@ -239,14 +247,15 @@ Both roots hold the same taxonomy and are searched at every specificity tier, so
 knowledge_bank/
 ├── researched/                          written only by the Skill
 │   └── zips/11215/policy-notes.md
-├── user/                                written by you
-│   ├── global/                          applies to every property
-│   ├── states/NY/                       any property in New York
-│   ├── zips/11215/                      that ZIP
-│   ├── cities/brooklyn_ny/              that city
-│   └── properties/250_5th_ave_11215/    one specific address
-└── zips/<ZIP>/_analysis-log.md          app-written trail (see below)
+└── user/                                written by you
+    ├── global/                          applies to every property
+    ├── states/NY/                       any property in New York
+    ├── zips/11215/                      that ZIP
+    ├── cities/brooklyn_ny/              that city
+    └── properties/250_5th_ave_11215/    one specific address
 ```
+
+**Exactly two roots, always.** Anything the app itself writes — currently just the analysis trail — goes to `logs/`, never here. That keeps a simple rule: everything under `knowledge_bank/` is policy knowledge, and every file is either AI-researched or human-added. A test enforces this, failing if an analysis writes anything into the knowledge bank.
 
 Folders are created on demand, so only ones holding a note exist. Legacy flat `<state>-<zip>/` folders from an earlier layout are still read and tagged as such.
 
@@ -310,12 +319,12 @@ Los Angeles and Brooklyn have no built-in sample policy record at all, so those 
 
 ### Traceability: the analysis trail
 
-Every analysis appends a record to **`knowledge_bank/zips/<ZIP>/_analysis-log.md`** capturing the address, the recommendation, which market and policy records matched, which notes were read, the address-check result, the flags applied, and any assumption conflicts. Months later you can open a ZIP's folder and see exactly what produced a past recommendation. Trails also appear in their own section on the Knowledge Bank page.
+Every analysis appends a record to **`logs/zips/<ZIP>/_analysis-log.md`** capturing the address, the recommendation, which market and policy records matched, which notes were read, the address-check result, the flags applied, and any assumption conflicts. Months later you can open a ZIP's folder and see exactly what produced a past recommendation. Trails also appear in their own section on the Knowledge Bank page.
 
 Two deliberate properties:
 
-- The trail is written **outside** the `researched/` and `user/` roots, because it is a record of what the app did — not a policy input.
-- **Files beginning with `_` are never read back into a report**, so a trail can never feed the analysis its own past output. Trails are also git-ignored: they are your run history, not project source.
+- The trail lives in **`logs/`, outside the knowledge bank entirely**, because it records what the app *did* rather than being policy knowledge the app *reads*. That is what keeps `knowledge_bank/` to exactly two roots.
+- **Files beginning with `_` are never read back into a report**, so even a trail copied into the knowledge bank could not feed the analysis its own past output. Trails are git-ignored: they are your run history, not project source.
 
 ---
 
@@ -353,7 +362,7 @@ You can also enter any address. If the ZIP isn't in the sample data, NorthStar f
 pytest
 ```
 
-**90 tests across 6 files:**
+**91 tests across 6 files:**
 
 | File | Coverage |
 |---|---|

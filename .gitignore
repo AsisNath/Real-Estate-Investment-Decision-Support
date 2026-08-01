@@ -8,8 +8,9 @@ __pycache__/
 ~$*
 
 # Analysis trails are per-user run records, not source. They stay on disk for
-# inspection but are not versioned.
-knowledge_bank/**/_analysis-log.md
+# inspection but are not versioned. Kept out of knowledge_bank/ so that folder
+# has exactly two roots: researched/ and user/.
+logs/
 
 # OS
 Thumbs.db

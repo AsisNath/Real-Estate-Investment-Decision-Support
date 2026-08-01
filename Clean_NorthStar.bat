@@ -19,7 +19,7 @@ echo.
 echo It will NEVER delete your policy notes, PDFs, or any other
 echo file you added yourself (knowledge_bank\researched, knowledge_bank\user,
 echo or anything else you placed in knowledge_bank). It also never touches
-echo app\*.py, static\, templates\, or anything else Run_NorthStar.bat needs.
+echo app\, data\, docs\, tests\, or anything else Run_NorthStar.bat needs.
 echo.
 
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^

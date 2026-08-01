@@ -6,7 +6,7 @@ The application runs entirely on your machine. It uses no paid APIs, no scraping
 
 > **Design Studio Project** | BUKD-X500: Agentic AI Systems | Kelley School of Business
 > **Team 5:** Ashish Nath, Justin Kretschman
-> **Proposal:** [Week9_DSP_NorthStar_Property_Investment_Consulting_Proposal.docx](Week9_DSP_NorthStar_Property_Investment_Consulting_Proposal.docx)
+> **Proposal:** [docs/Week9_DSP_NorthStar_Property_Investment_Consulting_Proposal.docx](docs/Week9_DSP_NorthStar_Property_Investment_Consulting_Proposal.docx)
 
 ---
 
@@ -94,39 +94,58 @@ flowchart TD
 
 ## Project structure
 
+Source, tests, data, docs, and tooling each have one obvious home. The two launchers stay at the root on purpose — they are the user-facing entry points, and the project's deliverable is explicitly a file you double-click.
+
 ```text
 NorthStar Property Investment Consulting/
-├── app/                          Backend (FastAPI + business logic)
-│   ├── main.py                   Routes and JSON API
+│
+├── app/                          ── APPLICATION SOURCE ──────────────────
+│   ├── main.py                   FastAPI app: routes and the JSON API
 │   ├── schemas.py                Pydantic request validation
 │   ├── finance.py                Deterministic financial model
 │   ├── data_loader.py            JSON loading, policy layering, address checks
 │   ├── knowledge_bank.py         Note parsing, rendering, writing, analysis trail
-│   └── analysis.py               Report assembly, risks, assumption conflicts
-├── data/                         Sample market and policy records (JSON)
+│   ├── analysis.py               Report assembly, risks, assumption conflicts
+│   ├── templates/                Jinja2 pages served by the app
+│   │   ├── index.html            Analysis dashboard
+│   │   └── knowledge_bank.html   Knowledge Bank browser
+│   └── static/                   Frontend assets (no build step)
+│       ├── app.js                Form handling and report rendering
+│       ├── knowledge_bank.js     Knowledge Bank page behavior
+│       └── styles.css            Dashboard styling
+│
+├── tests/                        ── TEST SUITE ──────────────────────────
+│   └── (6 files, 90 tests)       Mirrors the app modules; see Testing below
+│
+├── data/                         ── BUNDLED REFERENCE DATA ──────────────
 │   ├── market_data.json          Rent/value/tax context by ZIP, state, national
 │   ├── policy_data.json          Rental rules and source links by jurisdiction
 │   ├── sample_properties.json    Five demo scenarios for the "Load sample" menu
 │   └── zip_directory.json        ZIP-to-place directory + ZIP-prefix-to-state table
-├── knowledge_bank/               Local policy library (see its own README)
+│
+├── knowledge_bank/               ── YOUR LOCAL POLICY LIBRARY ───────────
 │   ├── researched/               Written only by the AI research Skill
-│   └── user/                     Written by you, via the app or by hand
-├── templates/                    Jinja2 pages
-│   ├── index.html                Analysis dashboard
-│   └── knowledge_bank.html       Knowledge Bank browser
-├── static/                       Frontend assets (no build step)
-│   ├── app.js                    Form handling and report rendering
-│   ├── knowledge_bank.js         Knowledge Bank page behavior
-│   └── styles.css                Dashboard styling
-├── tests/                        90 tests across 6 files
-├── .claude/skills/               The bundled property-policy-research Skill
-├── Run_NorthStar.bat             One-click launcher (setup, test, run)
+│   ├── user/                     Written by you, via the app or by hand
+│   └── README.md                 How the two roots work
+│
+├── docs/                         ── PROJECT DOCUMENTATION ───────────────
+│   ├── Project_Prompt.md         The original build specification
+│   └── Week9_..._Proposal.docx   Design Studio proposal
+│
+├── .claude/                      ── AGENT TOOLING ───────────────────────
+│   ├── skills/                   The bundled property-policy-research Skill
+│   └── launch.json               Dev-server config for agent tooling
+│
+├── Run_NorthStar.bat             ── ENTRY POINTS & CONFIG ───────────────
 ├── Clean_NorthStar.bat           One-click cleanup of generated files
 ├── requirements.txt              Python dependencies
-├── agentic.md                    AI project memory for future work sessions
+├── README.md                     This file
 ├── AGENTS.md                     Spec for how agentic.md must be maintained
-└── Project_Prompt.md             The original build specification
+├── agentic.md                    AI project memory for future work sessions
+└── .gitignore
 ```
+
+**Why some files stay at the root.** `AGENTS.md` and `agentic.md` are read automatically by AI coding tools, which look for them at the project root — and `AGENTS.md` itself specifies that `agentic.md` must be root-level, so moving either would break the convention that makes them work. `README.md` stays at the root because that is where GitHub renders it.
 
 ---
 

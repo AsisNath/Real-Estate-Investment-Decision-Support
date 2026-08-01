@@ -31,7 +31,11 @@ from app.schemas import (
 )
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+# Web assets live beside the code they serve, so this is the app package
+# directory - not the project root that data_loader and knowledge_bank use.
+APP_DIR = Path(__file__).resolve().parent
+STATIC_DIR = APP_DIR / "static"
+TEMPLATES_DIR = APP_DIR / "templates"
 
 app = FastAPI(
     title="NorthStar Property Investment Consulting",
@@ -39,8 +43,8 @@ app = FastAPI(
     version="0.1.0",
 )
 
-app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
-templates = Jinja2Templates(directory=BASE_DIR / "templates")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 
 def asset_version() -> str:
@@ -51,7 +55,7 @@ def asset_version() -> str:
     """
     stamps = [
         int(path.stat().st_mtime)
-        for path in (BASE_DIR / "static").glob("*")
+        for path in STATIC_DIR.glob("*")
         if path.is_file()
     ]
     return str(max(stamps)) if stamps else "0"

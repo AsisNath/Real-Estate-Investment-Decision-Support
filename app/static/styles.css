@@ -573,6 +573,18 @@ select:focus {
   background: #fffdf5;
 }
 
+.kb-note-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+a.secondary-action {
+  display: inline-block;
+  text-decoration: none;
+}
+
 .research-request.running {
   border-left-color: var(--blue);
   background: #f4f9ff;
@@ -768,8 +780,20 @@ select:focus {
   font-weight: 700;
 }
 
+/* Kept for the trace panel, whose "View trail" button is a direct child. */
 .kb-note button {
   margin-top: 10px;
+}
+
+/* Inside the actions row the spacing belongs to the row, not the button:
+   leaving it on the button alone knocked it out of alignment with the sibling
+   brief link, which is an <a> and never picked the margin up. */
+.kb-note .kb-note-actions {
+  margin-top: 10px;
+}
+
+.kb-note .kb-note-actions button {
+  margin-top: 0;
 }
 
 .secondary-action {
@@ -780,6 +804,11 @@ select:focus {
   color: var(--blue);
   font-weight: 700;
   cursor: pointer;
+  /* Buttons do not inherit the page font but anchors do, so the two variants
+     render at different heights unless both are pinned here. */
+  font-family: inherit;
+  font-size: 13.5px;
+  line-height: 1.25;
 }
 
 .secondary-action:hover {

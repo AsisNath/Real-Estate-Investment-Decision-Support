@@ -119,7 +119,10 @@ function renderList(notes) {
       }</p>
           ${note.is_stale ? `<p class="kb-stale-warning">Older than the freshness window - re-run the research Skill before relying on it.</p>` : ""}
           <p class="kb-note-path"><code>${escapeHtml(note.relative_path)}</code></p>
-          <button type="button" class="secondary-action" data-path="${escapeHtml(note.relative_path)}">View note</button>
+          <div class="kb-note-actions">
+            <button type="button" class="secondary-action" data-path="${escapeHtml(note.relative_path)}">View note</button>
+            <a class="secondary-action" href="/knowledge-bank/brief?path=${encodeURIComponent(note.relative_path)}" target="_blank" rel="noopener noreferrer">Open policy brief</a>
+          </div>
         </article>
       `;
     })

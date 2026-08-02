@@ -350,6 +350,11 @@ function knowledgeBankPanel(knowledgeBank) {
               ${citations ? `<p class="doc-meta">${citations}</p>` : ""}
               ${doc.is_stale ? `<p class="doc-meta stale-note">This note is ${doc.days_old} days old. Re-run the research Skill before relying on it.</p>` : ""}
               <p class="doc-meta">File: <code>${escapeHtml(doc.relative_path)}</code></p>
+              ${
+                doc.relative_path.match(/\.(md|txt)$/i)
+                  ? `<p class="doc-meta"><a class="secondary-action" href="/knowledge-bank/brief?path=${encodeURIComponent(doc.relative_path)}" target="_blank" rel="noopener noreferrer">Open policy brief</a></p>`
+                  : ""
+              }
               <div class="note-body">${doc.html || `<pre>${escapeHtml(doc.excerpt)}</pre>`}</div>
             </details>
           `;

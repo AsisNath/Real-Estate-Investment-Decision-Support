@@ -203,6 +203,7 @@ NorthStar Property Investment Consulting/
 | `GET` | `/api/sample-properties` | Demo scenarios for the "Load sample" menu |
 | `GET` | `/api/knowledge-bank` | Inventory of every note and trail file |
 | `GET` | `/api/knowledge-bank/note?path=` | One note, rendered as HTML |
+| `GET` | `/knowledge-bank/brief?path=` | One note as a printable Policy Brief (`&download=true` to save) |
 | `GET` | `/api/knowledge-bank/trace?path=` | One analysis trail |
 | `POST` | `/api/knowledge-bank/notes` | Save a note the user wrote |
 | `GET` | `/api/research/status?zip_code=` | Poll a background research pass |
@@ -302,6 +303,20 @@ Any note appears in the report. Two optional sections give it real influence.
 Analyze the Brooklyn sample with 3% rent growth and the report opens with a red panel: New York's Rent Guidelines Board froze stabilized leases at 0%, so the IRR and equity multiple below assume growth the law does not permit. Use `none` when a limit doesn't apply.
 
 Notes are also scanned for lines containing "unverified", "confirm with", or "obtain", which become the report's **Diligence Checklist**. A note whose `**Researched:**` date is older than 120 days is flagged as stale.
+
+### Policy Briefs — the client-facing deliverable
+
+Every note can be rendered as a **Policy Brief**: a standalone, printable HTML page you can hand to a client or an advisor. Click **Open policy brief** beside any note on the Knowledge Bank page, or in the report's Knowledge Bank panel.
+
+```
+http://localhost:8000/knowledge-bank/brief?path=researched/zips/90026/policy-notes.md
+```
+
+It opens in a tab and prints straight to PDF (Ctrl-P) with a dedicated print stylesheet. Add `&download=true` to save the `.html` instead.
+
+The brief leads with a **"Bottom line for an investor"** callout summarizing the note's own high-attention flags and its declared limits (rent cap, STR availability, deposit cap), then the numbered sections with source-quality chips and the flags table. Two rules govern it: it is **generated from the note every time**, so a brief can never drift from the research behind it; and it **never invents content** — everything on the page comes from the note, and the machine-readable block is omitted because it is for the app, not for a reader.
+
+This is Lab 5's hand-built `Property-Policy-Brief-LA-90026.html` turned into a generator that works for any address.
 
 ### The Knowledge Bank page
 

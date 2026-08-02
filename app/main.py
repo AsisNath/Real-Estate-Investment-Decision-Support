@@ -23,6 +23,7 @@ from app.knowledge_bank import (
     record_analysis,
     scan_knowledge_bank,
 )
+from app.policy_brief import build_brief
 from app.policy_research import (
     availability as research_availability,
     request_research,
@@ -96,6 +97,29 @@ def knowledge_bank_note(path: str):
         raise HTTPException(status_code=404, detail="That note was not found.")
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error))
+
+
+@app.get("/knowledge-bank/brief", response_class=HTMLResponse)
+def knowledge_bank_brief(path: str, download: bool = False):
+    """Render a note as a client-ready Policy Brief.
+
+    This is the Lab 5 "polished deliverable" turned into a generator: it opens in
+    a tab, prints to PDF cleanly, and is regenerated from the note every time, so
+    a brief can never drift from the research behind it.
+    """
+    try:
+        brief = build_brief(path)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="That note was not found.")
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+
+    headers = (
+        {"Content-Disposition": f'attachment; filename="{brief["filename"]}"'}
+        if download
+        else {}
+    )
+    return HTMLResponse(content=brief["html"], headers=headers)
 
 
 @app.get("/api/knowledge-bank/trace")

@@ -105,6 +105,34 @@ def _profile_dir() -> Path:
     return Path.home() / ".config" / "anthropic"
 
 
+# An already-authenticated agent CLI is the *preferred* backend, because it is
+# how Lab 5 worked: the Skill runs inside a tool the user has already signed into,
+# which brings its own credentials and its own web search. Nothing to configure,
+# no API key to mint, no key stored in this project.
+#
+# Each entry is (executable, args). The prompt is fed on stdin - the Skill is far
+# too long for a Windows command line. read-only sandboxing is deliberate: the
+# agent researches and prints, and NorthStar decides what gets written to disk,
+# so a reply that is not a policy note can still never land in researched/.
+CLI_BACKENDS: list[tuple[str, list[str]]] = [
+    ("codex", ["exec", "-s", "read-only", "-c", "tools.web_search=true", "-"]),
+    ("claude", ["-p", "--permission-mode", "plan"]),
+]
+
+CLI_TIMEOUT_SECONDS = 900
+
+
+def find_agent_cli() -> tuple[str, list[str]] | None:
+    """The first signed-in agent CLI on PATH, or None."""
+    import shutil
+
+    for executable, args in CLI_BACKENDS:
+        resolved = shutil.which(executable)
+        if resolved:
+            return resolved, args
+    return None
+
+
 def has_credentials() -> bool:
     """Can the SDK authenticate at all?
 
@@ -145,14 +173,27 @@ def availability() -> dict[str, Any]:
             "reason": "Automatic research is turned off (NORTHSTAR_DISABLE_AUTO_RESEARCH is set).",
         }
 
+    if not SKILL_FILE.exists():
+        return {
+            "available": False,
+            "reason": f"The research Skill is missing at {SKILL_FILE.name}.",
+        }
+
+    # Preferred: an agent CLI the user is already signed into. This is Lab 5's
+    # model, and it needs no configuration from us at all.
+    cli = find_agent_cli()
+    if cli:
+        return {"available": True, "reason": "", "backend": f"cli:{Path(cli[0]).stem}"}
+
+    # Fallback: call the Anthropic API directly with our own credentials.
     try:
         import anthropic  # noqa: F401
     except ImportError:
         return {
             "available": False,
             "reason": (
-                "The `anthropic` package is not installed. Run "
-                "`pip install -r requirements.txt` and restart the app."
+                "No signed-in agent CLI was found, and the `anthropic` package is "
+                "not installed. Run `pip install -r requirements.txt` and restart."
             ),
         }
 
@@ -160,18 +201,13 @@ def availability() -> dict[str, Any]:
         return {
             "available": False,
             "reason": (
-                "No Anthropic credentials found. Run Setup_Research.bat to create "
-                "your .env file and paste an API key into it, then restart the app."
+                "No signed-in agent CLI (codex or claude) was found on PATH, and no "
+                "Anthropic credentials are configured. Either sign into one of those "
+                "CLIs, or run Setup_Research.bat to add an API key."
             ),
         }
 
-    if not SKILL_FILE.exists():
-        return {
-            "available": False,
-            "reason": f"The research Skill is missing at {SKILL_FILE.name}.",
-        }
-
-    return {"available": True, "reason": ""}
+    return {"available": True, "reason": "", "backend": "api:anthropic"}
 
 
 # --------------------------------------------------------------------------
@@ -360,9 +396,87 @@ def _looks_like_a_note(text: str) -> bool:
     return stripped.startswith("# Policy Notes") and "## 1." in stripped
 
 
+def _extract_note(output: str) -> str:
+    """Pull the policy note out of an agent CLI's transcript.
+
+    A CLI prints a session banner, its tool calls, and a token count around the
+    answer, and it commonly echoes the final message twice. The note itself is
+    the largest block starting at the `# Policy Notes` heading.
+    """
+    starts = [m.start() for m in re.finditer(r"^#\s*Policy Notes", output, re.M)]
+    if not starts:
+        return output.strip()
+
+    best = ""
+    for start in starts:
+        candidate = output[start:]
+        # Trim anything the CLI appended after the note.
+        candidate = re.split(r"\n(?:tokens used|\[?\d[\d,]* tokens)\b", candidate)[0]
+        if len(candidate) > len(best):
+            best = candidate
+    return best.strip()
+
+
+def _call_agent_cli(address: str, city: str, state: str, zip_code: str) -> str:
+    """Delegate the research to an agent CLI the user is already signed into.
+
+    This is how Lab 5 always worked, and it sidesteps credentials entirely: the
+    CLI brings its own login and its own web search. NorthStar supplies the Skill
+    as the prompt and keeps control of what reaches disk.
+    """
+    import subprocess
+
+    cli = find_agent_cli()
+    if cli is None:
+        raise RuntimeError("No signed-in agent CLI was found on PATH.")
+    executable, args = cli
+
+    prompt = f"{_system_prompt()}\n\n---\n\n{build_task_prompt(address, city, state, zip_code)}"
+
+    try:
+        completed = subprocess.run(
+            [executable, *args],
+            input=prompt,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=CLI_TIMEOUT_SECONDS,
+            cwd=str(BASE_DIR),
+        )
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(
+            f"{Path(executable).stem} did not finish within "
+            f"{CLI_TIMEOUT_SECONDS // 60} minutes. Nothing was saved."
+        ) from None
+    except OSError as error:
+        raise RuntimeError(f"Could not run {Path(executable).stem}: {error}") from None
+
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout or "").strip()[-400:]
+        raise RuntimeError(
+            f"{Path(executable).stem} exited with code {completed.returncode}. {detail}"
+        )
+
+    output = completed.stdout or ""
+    if "NO_WEB_SEARCH" in output:
+        raise RuntimeError(
+            f"{Path(executable).stem} could not use web search, so no note was "
+            "written. Regulatory facts must never come from memory."
+        )
+    return _extract_note(output)
+
+
+def _research(address: str, city: str, state: str, zip_code: str) -> str:
+    """Run the research on whichever backend this machine can actually use."""
+    if find_agent_cli():
+        return _call_agent_cli(address, city, state, zip_code)
+    return _call_claude(address, city, state, zip_code)
+
+
 def _run_research(address: str, city: str, state: str, zip_code: str) -> None:
     try:
-        note = _call_claude(address, city, state, zip_code)
+        note = _research(address, city, state, zip_code)
     except Exception as error:  # noqa: BLE001 - a background thread must not die silently
         _record_failure(zip_code, _describe_error(error))
         return

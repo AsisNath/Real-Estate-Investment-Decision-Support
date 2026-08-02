@@ -14,6 +14,11 @@ from app import policy_research
 @pytest.fixture(autouse=True)
 def no_paid_research(monkeypatch):
     monkeypatch.setenv("NORTHSTAR_DISABLE_AUTO_RESEARCH", "1")
+    # Research can also run by shelling out to a signed-in agent CLI. On a
+    # developer machine that CLI is usually present and logged in, so without
+    # this a test that stubs the API path would silently launch the real thing
+    # and spend the developer's own quota.
+    monkeypatch.setattr(policy_research, "find_agent_cli", lambda: None)
     policy_research.reset()
     yield
     policy_research.reset()

@@ -29,7 +29,8 @@ def test_missing_key_is_reported_not_crashed(monkeypatch):
     ready = policy_research.availability()
 
     assert ready["available"] is False
-    assert ".env" in ready["reason"]
+    # The message must name a concrete remedy, not just state a failure.
+    assert "Setup_Research.bat" in ready["reason"]
 
 
 def test_env_file_does_not_override_a_real_environment_variable(tmp_path, monkeypatch):
@@ -305,3 +306,97 @@ def test_no_credentials_anywhere_is_reported_not_assumed(monkeypatch, tmp_path):
     monkeypatch.setattr(policy_research, "_profile_dir", lambda: tmp_path / "nope")
 
     assert policy_research.has_credentials() is False
+
+
+def test_an_agent_cli_is_preferred_over_an_api_key(monkeypatch):
+    """A signed-in CLI needs no configuration, so it wins."""
+    monkeypatch.delenv("NORTHSTAR_DISABLE_AUTO_RESEARCH", raising=False)
+    monkeypatch.setattr(policy_research, "load_env_file", lambda *a, **k: None)
+    monkeypatch.setattr(
+        policy_research, "find_agent_cli", lambda: ("C:/npm/codex.cmd", ["exec", "-"])
+    )
+
+    ready = policy_research.availability()
+
+    assert ready["available"] is True
+    assert ready["backend"] == "cli:codex"
+
+
+def test_no_cli_and_no_key_names_both_ways_to_fix_it(monkeypatch):
+    monkeypatch.delenv("NORTHSTAR_DISABLE_AUTO_RESEARCH", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    monkeypatch.setattr(policy_research, "load_env_file", lambda *a, **k: None)
+    monkeypatch.setattr(policy_research, "find_agent_cli", lambda: None)
+    monkeypatch.setattr(policy_research, "has_credentials", lambda: False)
+
+    ready = policy_research.availability()
+
+    assert ready["available"] is False
+    assert "codex" in ready["reason"] and "Setup_Research.bat" in ready["reason"]
+
+
+def test_note_is_extracted_from_a_cli_transcript():
+    """A CLI wraps the answer in a banner, tool calls, and a token count."""
+    transcript = (
+        "--------\nworkdir: C:\\project\nmodel: gpt-5.5\n--------\n"
+        "user\nRun policy diligence...\n"
+        "web search: Ballwin short term rental\n"
+        "codex\n"
+        "# Policy Notes - Ballwin, MO 63021\n\n"
+        "## 1. Short-Term Rental (STR) Rules\n\n- A finding.\n"
+        "tokens used\n24,492\n"
+    )
+
+    note = policy_research._extract_note(transcript)
+
+    assert note.startswith("# Policy Notes - Ballwin")
+    assert "- A finding." in note
+    assert "tokens used" not in note
+    assert "workdir" not in note and "web search:" not in note
+
+
+def test_the_longest_copy_wins_when_a_cli_echoes_its_answer():
+    """CLIs often print the final message twice; a truncated echo must not win."""
+    transcript = (
+        "codex\n# Policy Notes - X\n\n## 1. Rules\n\n- Full body here.\n"
+        "tokens used\n100\n"
+        "# Policy Notes - X\n"
+    )
+
+    note = policy_research._extract_note(transcript)
+
+    assert "Full body here." in note
+
+
+def test_a_cli_that_cannot_search_the_web_writes_nothing(monkeypatch, tmp_path):
+    """The Skill forbids answering regulatory questions from memory."""
+    import subprocess
+
+    monkeypatch.setattr(
+        policy_research, "find_agent_cli", lambda: ("codex", ["exec", "-"])
+    )
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *a, **k: subprocess.CompletedProcess(a, 0, "NO_WEB_SEARCH", ""),
+    )
+
+    with pytest.raises(RuntimeError, match="web search"):
+        policy_research._call_agent_cli("1 Main St", "Nowhere", "KS", "67520")
+
+
+def test_a_failing_cli_reports_its_exit_code(monkeypatch):
+    import subprocess
+
+    monkeypatch.setattr(
+        policy_research, "find_agent_cli", lambda: ("codex", ["exec", "-"])
+    )
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *a, **k: subprocess.CompletedProcess(a, 1, "", "not logged in"),
+    )
+
+    with pytest.raises(RuntimeError, match="exited with code 1"):
+        policy_research._call_agent_cli("1 Main St", "Nowhere", "KS", "67521")

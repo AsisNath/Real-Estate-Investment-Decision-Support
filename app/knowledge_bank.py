@@ -74,6 +74,11 @@ def _strip_markdown(text: str) -> str:
 
 
 def _coerce(value: str) -> Any:
+    # The Skill asks for a bare value, but a research agent often appends its
+    # citation ("2 - [RSMo 535.300](...) - as of 2026-08-02 official"). Keeping
+    # the whole line as a string silently disables the guardrail that compares
+    # the user's assumptions against it, so trim at the first citation marker.
+    value = re.split(r"\s+[—–-]\s+|\s+\[", value.strip(), maxsplit=1)[0]
     lowered = value.strip().lower()
     if lowered in {"true", "yes"}:
         return True

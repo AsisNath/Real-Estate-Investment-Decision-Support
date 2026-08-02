@@ -214,3 +214,34 @@ def test_create_note_cannot_escape_the_folder(tmp_path):
         create_note("../outside", "evil.md", "content", root=tmp_path)
 
     assert not (tmp_path.parent / "outside").exists()
+
+
+def test_machine_readable_values_tolerate_appended_citations():
+    """A research agent commonly cites its source on the summary line.
+
+    Keeping the whole line as a string silently disabled the assumption-conflict
+    guardrail, which is the point of the machine-readable block.
+    """
+    note = (
+        "# Policy Notes - Wildwood, MO 63038\n\n"
+        "## NorthStar Machine-Readable Summary\n\n"
+        "- rent_growth_cap_percent: none - [RSMo 441.043](https://revisor.mo.gov) - as of 2026-08-02\n"
+        "- security_deposit_cap_months: 2 - [RSMo 535.300](https://revisor.mo.gov) - as of 2026-08-02\n"
+        "- short_term_rental_allowed: false - [City](https://example.gov)\n"
+    )
+
+    facts = parse_policy_note(note)["facts"]
+
+    assert facts["rent_growth_cap_percent"] is None
+    assert facts["security_deposit_cap_months"] == 2
+    assert facts["short_term_rental_allowed"] is False
+
+
+def test_a_bare_value_still_parses():
+    note = (
+        "# Policy Notes - Somewhere\n\n"
+        "## NorthStar Machine-Readable Summary\n\n"
+        "- rent_growth_cap_percent: 2.5\n"
+    )
+
+    assert parse_policy_note(note)["facts"]["rent_growth_cap_percent"] == 2.5

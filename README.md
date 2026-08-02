@@ -49,7 +49,7 @@ The app serves two pages:
 
 **Requirements:** Python 3.11+ and Windows (the `.bat` launchers are Windows-specific; the app itself is cross-platform).
 
-**Optional — automatic policy research.** Double-click **`Setup_Research.bat`**, paste an [Anthropic API key](https://console.anthropic.com/settings/keys) into the file it opens, and restart. The app then researches local rental rules by itself for any address that has no note yet, instead of asking you to run the research Skill by hand. Everything else works fully offline without it — see [When no note exists yet](#when-no-note-exists-yet--automatic-research).
+**Optional — automatic policy research.** If you are already signed into an agent CLI (`codex` or `claude`), **there is nothing to set up**: NorthStar delegates research to it, and the CLI brings its own login and web search. Otherwise, double-click `Setup_Research.bat` and paste an [Anthropic API key](https://console.anthropic.com/settings/keys). Everything else works fully offline without either — see [When no note exists yet](#when-no-note-exists-yet--automatic-research).
 
 > **If a code change doesn't appear in the browser,** a stale server process is almost always the cause — a running Python process keeps the code *and* JSON data it loaded at startup. `Run_NorthStar.bat` clears port 8000 automatically. To do it manually:
 >
@@ -61,7 +61,7 @@ The app serves two pages:
 
 ## How it works
 
-Two connected flows share one folder. The **application flow** runs every time you click Analyze — always local, always deterministic, and complete on its own. The **research flow** fills in live policy facts for addresses that have none; with an API key configured it runs by itself in the background, and without one it falls back to a copy-and-paste prompt.
+Two connected flows share one folder. The **application flow** runs every time you click Analyze — always local, always deterministic, and complete on its own. The **research flow** fills in live policy facts for addresses that have none; when an agent is reachable it runs by itself in the background, and otherwise it falls back to a copy-and-paste prompt.
 
 ```mermaid
 flowchart TD
@@ -73,7 +73,7 @@ flowchart TD
         A --> B --> C --> D
     end
 
-    subgraph research["Research flow — background, needs an API key + internet"]
+    subgraph research["Research flow — background, needs an agent + internet"]
         E["Background research thread<br/><small>starts itself when a note is missing or stale</small>"]
         G["property-policy-research workflow<br/><small>web search, verified against .gov sources</small>"]
         E --> G
@@ -339,9 +339,20 @@ Automatic research fills the more specific layer so you stop relying on the broa
 
 When a property has no matching note, or its only note is stale, **the app researches it for itself**. You do not have to run anything. Your only job is dropping documents you already have — an HOA declaration, a lease, a city notice — into `knowledge_bank/user/Zips/<zip>/`.
 
-To turn it on once, double-click **`Setup_Research.bat`**. It creates `.env` from the template and opens it in Notepad; paste an [Anthropic API key](https://console.anthropic.com/settings/keys) after `ANTHROPIC_API_KEY=`, save, and run `Run_NorthStar.bat`. `.env` is git-ignored, so the key never reaches the repository.
+#### How it authenticates — two backends, in this order
 
-If you already signed in with `ant auth login`, the app finds that profile automatically and no API key is needed.
+NorthStar checks for a usable agent before every pass and reports which one it found as `research_request.auto.backend`.
+
+| Order | Backend | What it needs | Setup |
+|---|---|---|---|
+| 1 | **Signed-in agent CLI** — `codex` or `claude` on your PATH | Nothing. The CLI supplies its own login and web search. | **None** |
+| 2 | **Anthropic API** | An API key, or an `ant auth login` profile | `Setup_Research.bat` |
+
+**The first is how Lab 5 always worked, and it is the reason no API key is required.** The Skill is plain instructions; running it inside a tool you have already signed into means the *agent* holds the credentials, not this project. NorthStar just hands over the Skill and decides what gets written to disk.
+
+Two deliberate constraints on the CLI backend: the prompt goes in on **stdin** (the Skill is longer than a Windows command line allows), and the agent runs **read-only** — it researches and prints, NorthStar writes the file. That keeps the guarantee that a reply which is not a policy note is never saved.
+
+If neither backend is available, run **`Setup_Research.bat`**. It creates `.env` from the template and opens it in Notepad; paste an [Anthropic API key](https://console.anthropic.com/settings/keys) after `ANTHROPIC_API_KEY=`, save, and run `Run_NorthStar.bat`. `.env` is git-ignored, so the key never reaches the repository.
 
 What happens on the next analysis of an unresearched address — any address, any ZIP, no setup per location:
 
@@ -352,23 +363,28 @@ What happens on the next analysis of an unresearched address — any address, an
 
 A note past the 120-day freshness window refreshes itself the same way. A current note is never re-researched, so the same ZIP is never billed twice.
 
-**Cost and failure behaviour.** Each new address costs roughly one Opus request with web search. A note is written once and reused forever, so the same ZIP is never re-billed, and a failed call is remembered rather than retried on every analysis — there is an explicit **Try the research again** button instead. If the key is missing or rejected, the machine is offline, or the reply doesn't look like a policy note, **nothing is saved** and the panel falls back to the original copy-and-paste prompt with your address already filled in:
+**Cost and failure behaviour.** Each new address costs one research pass — against your CLI's own plan on the first backend, or roughly one Opus request with web search on the second. A note is written once and reused forever, so the same ZIP is never re-billed; a note past the 120-day window refreshes itself, and a current one never does. A failed pass is remembered rather than retried on every analysis — there is an explicit **Try the research again** button instead. If no agent is reachable, the machine is offline, the agent reports it could not search the web, or the reply doesn't look like a policy note, **nothing is saved** and the panel falls back to the copy-and-paste prompt with your address already filled in:
 
 > Run policy diligence on 250 5th Ave, Brooklyn, NY 11215.
 
-To keep the app fully offline — for a demo with no wifi, say — set `NORTHSTAR_DISABLE_AUTO_RESEARCH=1` in `.env`. The test suite sets it automatically, so running `pytest` can never cost you anything.
+To keep the app fully offline — for a demo with no wifi, say — set `NORTHSTAR_DISABLE_AUTO_RESEARCH=1` in `.env`. The test suite sets it automatically **and** forces CLI detection off, so running `pytest` can never spend your API credit or your CLI's quota.
 
 ### Bundled researched notes
 
-Three notes produced by the Skill ship with the project, chosen because they are near-opposite regulatory environments:
+Eight notes ship with the project. The first three came from Lab 5 and were chosen as near-opposite regulatory environments; the rest were researched against real addresses and show how differently neighbouring jurisdictions treat the same question.
 
 | Note | Market | Why it's instructive |
 |---|---|---|
 | `researched/zips/78704/policy-notes.md` | Austin, TX | STR legal with a license; rent control banned statewide |
 | `researched/zips/90026/policy-notes.md` | Los Angeles, CA | STR effectively banned for investors; two overlapping rent-control regimes |
 | `researched/zips/11215/policy-notes.md` | Brooklyn, NY | STR blocked by Local Law 18; rent freeze on stabilized units |
+| `researched/zips/46202/policy-notes.md` | Indianapolis, IN | Owner-occupancy question unresolvable — the ordinance page blocked automated access, and the note says so instead of guessing |
+| `researched/zips/63043/policy-notes.md` | Maryland Heights, MO | STR open to investors: the owner **or manager** need only be within an hour's drive |
+| `researched/zips/63021/policy-notes.md` | Ballwin, MO | STR closed to investors: the owner must live there **180 days a year** — the opposite answer, two ZIPs away |
+| `researched/zips/63301/policy-notes.md` | Saint Charles, MO | Pairs with a recorded HOA indenture in `user/` to answer a question neither source could alone |
+| `researched/zips/63109/policy-notes.md` | St. Louis, MO | STR permit regime exists but is **unenforceable under a court order** — a fact only live search surfaces |
 
-Los Angeles and Brooklyn have no built-in sample policy record at all, so those reports are driven *entirely* by researched notes — the knowledge bank doing exactly the job the proposal describes.
+Los Angeles and Brooklyn have no built-in sample policy record at all, so those reports are driven *entirely* by researched notes — the knowledge bank doing exactly the job the proposal describes. The Maryland Heights / Ballwin pair is the sharpest illustration of why this layer exists: same state, same county, same statutes, opposite conclusions.
 
 ### Traceability: the analysis trail
 

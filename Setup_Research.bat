@@ -18,6 +18,24 @@ echo  NorthStar - Automatic Policy Research Setup
 echo  ==========================================
 echo.
 
+REM If a signed-in agent CLI is already on PATH, research works with no key at
+REM all - say so rather than walking someone through setup they do not need.
+where codex >nul 2>&1 && (
+    echo  GOOD NEWS: the "codex" CLI is already on your PATH.
+    echo  NorthStar will use it for research, with its login and its web search.
+    echo  You do NOT need an API key. Just run Run_NorthStar.bat.
+    echo.
+    echo  Continue only if you want the Anthropic API as a fallback instead.
+    echo.
+    pause
+)
+where claude >nul 2>&1 && (
+    echo  GOOD NEWS: the "claude" CLI is already on your PATH.
+    echo  NorthStar will use it for research. You do NOT need an API key.
+    echo.
+    pause
+)
+
 if exist ".env" (
     echo  A .env file already exists. Opening it so you can check or update the key.
     echo.

@@ -216,3 +216,92 @@ def _research_threads(zip_code: str):
         for thread in threading.enumerate()
         if thread.name == f"policy-research-{zip_code}"
     ]
+
+
+def test_a_stale_note_can_refresh_itself(monkeypatch, tmp_path):
+    """A stale note used to block its own refresh forever.
+
+    The report asks for research precisely because the note is old; the presence
+    of the file on disk must not be the reason research is declined.
+    """
+    monkeypatch.setattr(
+        policy_research, "availability", lambda: {"available": True, "reason": ""}
+    )
+    monkeypatch.setattr(policy_research, "KNOWLEDGE_BANK_DIR", tmp_path)
+
+    stale = policy_research.note_path("67510")
+    stale.parent.mkdir(parents=True)
+    stale.write_text(
+        "# Policy Notes - Old Town\n\n**Researched:** 2019-01-01\n\n"
+        "## 1. Rules\n\n- Something from years ago.\n",
+        encoding="utf-8",
+    )
+    assert policy_research.note_is_stale("67510") is True
+
+    calls = []
+    fresh = (
+        "# Policy Notes - Old Town, KS 67510\n\n**Researched:** 2026-08-02\n\n"
+        "## 1. Short-Term Rental (STR) Rules\n\n- Fresh finding.\n"
+    )
+    monkeypatch.setattr(
+        policy_research, "_call_claude", lambda *a: calls.append(a) or fresh
+    )
+
+    # Without permission, an existing file still wins - that is the cost guard.
+    policy_research.request_research("1 Main St", "Old Town", "KS", "67510")
+    assert calls == []
+
+    # With permission, the stale note is replaced.
+    policy_research.request_research(
+        "1 Main St", "Old Town", "KS", "67510", refresh_stale=True
+    )
+    for thread in _research_threads("67510"):
+        thread.join(timeout=10)
+
+    assert len(calls) == 1
+    assert "Fresh finding" in stale.read_text(encoding="utf-8")
+    assert policy_research.note_is_stale("67510") is False
+
+
+def test_a_current_note_is_never_re_researched(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        policy_research, "availability", lambda: {"available": True, "reason": ""}
+    )
+    monkeypatch.setattr(policy_research, "KNOWLEDGE_BANK_DIR", tmp_path)
+
+    current = policy_research.note_path("67511")
+    current.parent.mkdir(parents=True)
+    current.write_text(
+        "# Policy Notes - New Town\n\n**Researched:** 2026-08-01\n\n"
+        "## 1. Rules\n\n- Recent finding.\n",
+        encoding="utf-8",
+    )
+
+    calls = []
+    monkeypatch.setattr(policy_research, "_call_claude", lambda *a: calls.append(a) or "")
+
+    policy_research.request_research(
+        "1 Main St", "New Town", "KS", "67511", refresh_stale=True
+    )
+
+    assert calls == [], "a fresh note must never be re-billed"
+
+
+def test_credentials_are_found_from_an_oauth_profile(monkeypatch, tmp_path):
+    """A Claude login counts: users should not need to mint an API key."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    credentials = tmp_path / "credentials"
+    credentials.mkdir()
+    (credentials / "default.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(policy_research, "_profile_dir", lambda: tmp_path)
+
+    assert policy_research.has_credentials() is True
+
+
+def test_no_credentials_anywhere_is_reported_not_assumed(monkeypatch, tmp_path):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    monkeypatch.setattr(policy_research, "_profile_dir", lambda: tmp_path / "nope")
+
+    assert policy_research.has_credentials() is False

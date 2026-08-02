@@ -38,6 +38,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.knowledge_bank import parse_policy_note
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 KNOWLEDGE_BANK_DIR = BASE_DIR / "knowledge_bank"
@@ -94,6 +96,34 @@ def load_env_file(path: Path = ENV_FILE) -> None:
             os.environ[key] = value
 
 
+def _profile_dir() -> Path:
+    """Where the Anthropic SDK and `ant` CLI keep OAuth login profiles."""
+    if os.name == "nt":
+        base = os.environ.get("APPDATA")
+        if base:
+            return Path(base) / "Anthropic"
+    return Path.home() / ".config" / "anthropic"
+
+
+def has_credentials() -> bool:
+    """Can the SDK authenticate at all?
+
+    An unset ANTHROPIC_API_KEY does not mean there are no credentials: the SDK
+    also resolves an OAuth profile saved by `ant auth login`, which lets someone
+    with a Claude login use this without creating or pasting an API key. Checking
+    only the env var would tell those users the feature is unavailable when it is
+    not.
+    """
+    if os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"):
+        return True
+
+    credentials = _profile_dir() / "credentials"
+    try:
+        return any(credentials.glob("*.json"))
+    except OSError:
+        return False
+
+
 def availability() -> dict[str, Any]:
     """Can this machine run automatic research right now?
 
@@ -126,12 +156,12 @@ def availability() -> dict[str, Any]:
             ),
         }
 
-    if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")):
+    if not has_credentials():
         return {
             "available": False,
             "reason": (
-                "No Anthropic API key is configured. Copy `.env.example` to `.env` "
-                "and put your key in it, then restart the app."
+                "No Anthropic credentials found. Run Setup_Research.bat to create "
+                "your .env file and paste an API key into it, then restart the app."
             ),
         }
 
@@ -194,25 +224,46 @@ def status(zip_code: str) -> dict[str, Any]:
     return snapshot
 
 
+def note_is_stale(zip_code: str) -> bool:
+    """Is the existing note past the freshness window?
+
+    Regulations change; a note researched two years ago is not evidence about
+    today. Staleness is read from the note itself rather than the file's mtime,
+    because copying or re-saving a file does not make its facts current.
+    """
+    path = note_path(_job_key(zip_code))
+    try:
+        return bool(parse_policy_note(path.read_text(encoding="utf-8", errors="ignore"))["is_stale"])
+    except (OSError, KeyError):
+        return False
+
+
 def request_research(
     address: str,
     city: str,
     state: str,
     zip_code: str,
     force: bool = False,
+    refresh_stale: bool = False,
 ) -> dict[str, Any]:
     """Start a background research pass for this address if one is warranted.
 
-    Returns immediately. Doing nothing is a normal, common outcome: a note may
-    already exist, a pass may already be running, or a previous attempt may have
-    failed and we refuse to re-bill for it without an explicit `force`.
+    Returns immediately. Doing nothing is a normal, common outcome: a current
+    note may already exist, a pass may already be running, or a previous attempt
+    may have failed and we refuse to re-bill for it without an explicit `force`.
+
+    `refresh_stale` lets an existing but out-of-date note be researched again.
+    Without it a stale note blocked its own refresh forever - the report asked
+    for research because the note was stale, and this function declined because
+    a file was present.
     """
     key = _job_key(zip_code)
     if not re.fullmatch(r"\d{5}", key):
         return {"zip_code": key, "state": "idle", "message": "", "availability": availability()}
 
     if note_path(key).exists() and not force:
-        return status(key)
+        if not (refresh_stale and note_is_stale(key)):
+            return status(key)
 
     ready = availability()
     if not ready["available"]:

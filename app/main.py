@@ -192,12 +192,17 @@ def analyze_property(payload: AnalysisRequest):
     # immediately - the research itself runs in a background thread and the page
     # polls /api/research/status - and it is a no-op when a note already exists,
     # when a pass is already running, or when no API key is configured.
-    if report["research_request"]["status"] in {"missing", "stale"}:
+    research_status_now = report["research_request"]["status"]
+    if research_status_now in {"missing", "stale"}:
         report["research_request"]["auto"] = request_research(
             payload.address,
             payload.city,
             payload.state,
             payload.zip_code,
+            # A stale note must be allowed to replace itself, or it blocks its
+            # own refresh: the report asks for research precisely because the
+            # note is old, and a note being on disk would otherwise decline it.
+            refresh_stale=research_status_now == "stale",
         )
     else:
         report["research_request"]["auto"] = research_status(payload.zip_code)

@@ -49,7 +49,7 @@ The app serves two pages:
 
 **Requirements:** Python 3.11+ and Windows (the `.bat` launchers are Windows-specific; the app itself is cross-platform).
 
-**Optional — automatic policy research.** Copy `.env.example` to `.env` and add an [Anthropic API key](https://console.anthropic.com/settings/keys). The app then researches local rental rules by itself for any address that has no note yet, instead of asking you to run the research Skill by hand. Everything else works fully offline without it — see [When no note exists yet](#when-no-note-exists-yet--automatic-research).
+**Optional — automatic policy research.** Double-click **`Setup_Research.bat`**, paste an [Anthropic API key](https://console.anthropic.com/settings/keys) into the file it opens, and restart. The app then researches local rental rules by itself for any address that has no note yet, instead of asking you to run the research Skill by hand. Everything else works fully offline without it — see [When no note exists yet](#when-no-note-exists-yet--automatic-research).
 
 > **If a code change doesn't appear in the browser,** a stale server process is almost always the cause — a running Python process keeps the code *and* JSON data it loaded at startup. `Run_NorthStar.bat` clears port 8000 automatically. To do it manually:
 >
@@ -339,20 +339,18 @@ Automatic research fills the more specific layer so you stop relying on the broa
 
 When a property has no matching note, or its only note is stale, **the app researches it for itself**. You do not have to run anything. Your only job is dropping documents you already have — an HOA declaration, a lease, a city notice — into `knowledge_bank/user/Zips/<zip>/`.
 
-To turn it on once:
+To turn it on once, double-click **`Setup_Research.bat`**. It creates `.env` from the template and opens it in Notepad; paste an [Anthropic API key](https://console.anthropic.com/settings/keys) after `ANTHROPIC_API_KEY=`, save, and run `Run_NorthStar.bat`. `.env` is git-ignored, so the key never reaches the repository.
 
-```bash
-cp .env.example .env
-```
+If you already signed in with `ant auth login`, the app finds that profile automatically and no API key is needed.
 
-Then put an [Anthropic API key](https://console.anthropic.com/settings/keys) in that file and restart the app. `.env` is git-ignored, so the key never reaches the repository.
-
-What happens on the next analysis of an unresearched address:
+What happens on the next analysis of an unresearched address — any address, any ZIP, no setup per location:
 
 1. The report renders immediately and completely — research never blocks it.
 2. A panel says **"Researching local rental policy now"** and ticks a live timer. A real pass makes roughly a dozen web searches and takes one to three minutes.
 3. The finished note is saved to `knowledge_bank/researched/zips/<zip>/policy-notes.md` — the same file, in the same format, the Skill would have written.
 4. Run the analysis again and the findings feed the policy flags, high-attention risks, diligence checklist, and assumption conflicts.
+
+A note past the 120-day freshness window refreshes itself the same way. A current note is never re-researched, so the same ZIP is never billed twice.
 
 **Cost and failure behaviour.** Each new address costs roughly one Opus request with web search. A note is written once and reused forever, so the same ZIP is never re-billed, and a failed call is remembered rather than retried on every analysis — there is an explicit **Try the research again** button instead. If the key is missing or rejected, the machine is offline, or the reply doesn't look like a policy note, **nothing is saved** and the panel falls back to the original copy-and-paste prompt with your address already filled in:
 

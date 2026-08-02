@@ -305,7 +305,10 @@ function researchRequestPanel(researchRequest) {
     `;
   }
 
-  // No key, no package, or the kill switch is on: the original manual flow.
+  // No key, no package, or the kill switch is on. This is a normal state, not a
+  // fault: the report above is complete either way. The panel leads with the
+  // action to take and keeps the optional setup note secondary, because leading
+  // with "no API key is configured" made a working app look broken.
   const unavailableReason =
     auto.state === "unavailable" ? auto.message : (auto.availability || {}).reason;
 
@@ -314,15 +317,22 @@ function researchRequestPanel(researchRequest) {
       <div class="section-title">
         <div>
           <h3>${heading}</h3>
-          ${unavailableReason ? `<p class="muted">Automatic research is off: ${escapeHtml(unavailableReason)}</p>` : ""}
+          <p>The policy findings above come from the built-in jurisdiction records.
+          To add source-cited research for this exact address, run the
+          property-policy-research Skill with the ready-made prompt below.</p>
         </div>
       </div>
       ${manualResearchFallback(
         researchRequest,
         isMissing
-          ? "The address is already filled in below. Paste this into a Claude Code, Cowork, or claude.ai chat with web search enabled, and the property-policy-research Skill will research this exact address and save the results here."
-          : "A policy note exists for this location, but it is older than the 120-day freshness window. Paste this into a chat with web search enabled to refresh it."
+          ? "Paste this into a Claude Code, Cowork, or claude.ai chat with web search enabled. The Skill saves its findings straight into this project's Knowledge Bank, and your next analysis picks them up."
+          : "This location has a note, but it is past the 120-day freshness window. Paste this into a chat with web search enabled to refresh it."
       )}
+      ${
+        unavailableReason
+          ? `<p class="muted research-optional-setup">Optional: NorthStar can also do this by itself on every analysis. ${escapeHtml(unavailableReason)}</p>`
+          : ""
+      }
     </section>
   `;
 }

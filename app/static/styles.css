@@ -600,6 +600,11 @@ a.secondary-action {
   background: #fffdf5;
 }
 
+.research-optional-setup {
+  margin-top: 12px;
+  font-size: 12.5px;
+}
+
 .research-live {
   margin: 12px 0 0;
   font-family: ui-monospace, Consolas, monospace;

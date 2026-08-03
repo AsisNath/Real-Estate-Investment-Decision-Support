@@ -196,7 +196,8 @@ def build() -> Path:
     _figure(
         doc, "02-investor-report.png",
         "Figure 1 — Investor report for 745 Woodrun Dr, Ballwin MO. The researched note has flagged "
-        "STR income as unavailable and contributed two HIGH policy risks, moving the recommendation to Reject.",
+        "STR income as unavailable and raised policy risk from medium to HIGH. This deal fails on cash "
+        "flow either way; on a marginal one, that shift is what changes the answer.",
         width=3.85,
     )
 

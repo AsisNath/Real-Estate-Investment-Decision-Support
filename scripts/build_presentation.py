@@ -425,9 +425,11 @@ def build() -> Path:
         [
             # The honest gap: policy is researched live, rent is still a bundled
             # sample. Naming it beats being asked about the "low confidence" tag
-            # a grader can already see on the Market Snapshot.
-            "Rent and comps from a property-data API — today's market figures "
-            "are a state-level sample, and the report says so.",
+            # a grader can already see on the Market Snapshot. Redfin Data Center
+            # is named rather than "the Redfin API", which does not exist.
+            "Real market data: Redfin Data Center for ZIP-level history, a rent "
+            "API for per-property estimates. Today's figures are a state-level "
+            "sample, and the report says so.",
             "OCR so scanned HOA declarations parse themselves.",
             "Scheduled re-research so notes refresh before they age out.",
         ],
@@ -440,10 +442,16 @@ def build() -> Path:
     _notes(
         slide,
         "[4:45-5:00] Close on the lesson, not a summary.\n"
-        "If asked what you would build next, or about data sources, lead with the API item: "
-        "policy is researched live, but rent and comps are still a bundled state-level "
-        "sample, and the report labels that low confidence rather than hiding it. Owning "
-        "that gap is stronger than being caught by it.\n"
+        "If asked what you would build next, or about data sources, lead with the market-data "
+        "item: policy is researched live, but rent and comps are still a bundled state-level "
+        "sample, and the report labels that low confidence rather than hiding it. Owning that "
+        "gap is stronger than being caught by it.\n"
+        "If Redfin comes up specifically: they publish no public API, so the plan is their "
+        "Data Center bulk files - free, aggregated, ZIP-level history - refreshed by a script, "
+        "exactly the pattern we already use for the 41,488-ZIP GeoNames dataset. Scraping their "
+        "internal endpoints would breach their terms and break on any frontend change, so it is "
+        "not on the table. Per-property rent estimates would come from a rental-data API with "
+        "real developer access.\n"
         "The biggest shift: we spent our time writing standards - what counts as a verified "
         "fact, when to say 'unverified' - rather than wiring steps together. The agent handled "
         "the how, including recovering when a government site blocked it. That is a different "

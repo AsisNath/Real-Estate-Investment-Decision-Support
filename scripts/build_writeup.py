@@ -370,8 +370,14 @@ def build() -> Path:
     _p(
         doc,
         "What we would do differently: capture screenshots and generate documents from scripts from day "
-        "one, so figures track the code. Next steps are OCR for scanned declarations, a comparison view "
-        "across candidate properties, and scheduled re-research so notes refresh before they age out.",
+        "one, so figures track the code. The clearest remaining gap is that policy is researched live "
+        "while market figures are not — every Missouri address currently receives the same state-level "
+        "median rent, which the report labels low confidence rather than hiding. The fix is Redfin's "
+        "Data Center bulk files for ZIP-level historical trends, refreshed by a script exactly as we "
+        "already refresh the 41,488-ZIP GeoNames dataset, plus a rental-data API for per-property "
+        "estimates. Redfin publishes no public API and scraping its internal endpoints would breach "
+        "its terms, so the bulk datasets are the defensible route. After that: OCR for scanned "
+        "declarations, and scheduled re-research so notes refresh before they age out.",
     )
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)

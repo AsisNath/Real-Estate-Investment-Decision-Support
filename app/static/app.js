@@ -150,6 +150,39 @@ function badge(text, level = "medium") {
   return `<span class="badge ${level}">${text}</span>`;
 }
 
+function redfinBlock(report) {
+  // Real recorded sales for this ZIP. Absent for ZIPs Redfin does not cover,
+  // and for every ZIP until scripts/refresh_redfin_markets.py has been run.
+  const redfin = report.market && report.market.redfin;
+  if (!redfin) return "";
+
+  const price = report.financials.purchase_price;
+  const median = redfin.median_sale_price;
+  const premium = median ? price / median - 1 : null;
+  const gap =
+    premium === null
+      ? ""
+      : `<p class="redfin-gap">Your price of ${formatCurrency(price)} is
+         <strong>${formatPercent(Math.abs(premium))} ${premium >= 0 ? "above" : "below"}</strong>
+         the ZIP median.</p>`;
+
+  return `
+    <div class="section-title redfin-title">
+      <h4>Recorded Sales &mdash; ${escapeHtml(redfin.metro || redfin.state_code || "this ZIP")}</h4>
+      <p>Redfin, period ending ${escapeHtml(redfin.period_end)}</p>
+    </div>
+    <div class="metric-grid compact">
+      ${metricCard("Median Sale Price", formatCurrency(median))}
+      ${metricCard("Year Over Year", formatPercent(redfin.median_sale_price_yoy))}
+      ${metricCard("Median $/Sq Ft", formatCurrency(redfin.median_ppsf))}
+      ${metricCard("Days on Market", formatNumber(redfin.median_days_on_market, 0))}
+      ${metricCard("Months of Supply", formatNumber(redfin.months_of_supply, 1))}
+      ${metricCard("Sale to List", formatPercent(redfin.avg_sale_to_list))}
+    </div>
+    ${gap}
+  `;
+}
+
 function listItems(items, emptyText) {
   if (!items || items.length === 0) {
     return `<p class="muted">${emptyText}</p>`;
@@ -569,6 +602,7 @@ function renderReport(report) {
           <div><dt>Tax note</dt><dd>${report.market.property_tax_note}</dd></div>
           <div><dt>Source</dt><dd>${report.market.source_label} (${report.market.confidence} confidence)</dd></div>
         </dl>
+        ${redfinBlock(report)}
       </div>
       <div>
         <div class="section-title">

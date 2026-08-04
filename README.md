@@ -431,7 +431,7 @@ You can also enter any address. If the ZIP isn't in the sample data, NorthStar f
 pytest
 ```
 
-**91 tests across 6 files:**
+**151 tests across 9 files:**
 
 | File | Coverage |
 |---|---|
@@ -440,6 +440,9 @@ pytest
 | `test_knowledge_bank_module.py` | Note parsing, rendering, scanning, writing, path-traversal and overwrite guards |
 | `test_knowledge_bank_notes.py` | Researched notes driving flags, risks, and the recommendation |
 | `test_analysis_trail.py` | Trail writing, capping, and exclusion from note parsing |
+| `test_redfin_markets.py` | ZIP sale-data lookup, missing-file fallback, price-vs-market signals |
+| `test_policy_research.py` | Automatic research backends, note extraction, failure handling |
+| `test_policy_brief.py` | Policy brief generation from a note |
 | `test_api.py` | Endpoint behavior, assumption conflicts, research-request status |
 
 `Run_NorthStar.bat` runs this suite on every launch and refuses to start the server if anything fails.
@@ -450,7 +453,25 @@ pytest
 
 Double-click **`Clean_NorthStar.bat`** to reclaim disk space. It removes only what the app regenerates automatically — `app\__pycache__`, `tests\__pycache__`, `.pytest_cache`, and analysis trail logs — and shows you a count before deleting anything. It never touches your policy notes, PDFs, source code, or anything under `knowledge_bank\researched\` or `knowledge_bank\user\`.
 
-It separately offers to remove `.venv`, usually the largest folder in the project. **Close any other terminal, editor, or running server first** — if a file inside `.venv` is locked, Windows deletes only part of the folder and leaves a broken environment behind. If that happens, `Run_NorthStar.bat` detects the damage (a missing `pyvenv.cfg`) and rebuilds automatically on the next run, so you never need to repair it by hand.
+### Refreshing market data
+
+`data/redfin_markets.json` holds real ZIP-level sale figures for about 23,000 ZIP codes, taken from the free [Redfin Data Center](https://www.redfin.com/news/data-center/) market tracker. Redfin refreshes weekly; regenerating quarterly is plenty:
+
+```powershell
+python scripts/refresh_redfin_markets.py
+```
+
+The download is roughly 1.5 GB compressed and takes several minutes. It is streamed and decompressed as it arrives, so it never lands on disk or fills memory. ZIPs with no recorded sale in the last two years are dropped rather than served stale.
+
+**What it does and does not cover.** Redfin publishes sale data only — median sale price, year-over-year change, price per square foot, days on market, months of supply, and sale-to-list ratio. It has no rent figures, so the rent estimate still comes from the bundled sample data and its fallbacks. The app never invents a rent number.
+
+This is the only network call in the project besides policy research, and it happens *outside* the app: analysis itself stays entirely offline and deterministic, reading only the generated file.
+
+`scripts/refresh_zip_places.py` does the same job for the ZIP-to-city directory used by the address consistency check.
+
+### Reclaiming disk space
+
+`Clean_NorthStar.bat` separately offers to remove `.venv`, usually the largest folder in the project. **Close any other terminal, editor, or running server first** — if a file inside `.venv` is locked, Windows deletes only part of the folder and leaves a broken environment behind. If that happens, `Run_NorthStar.bat` detects the damage (a missing `pyvenv.cfg`) and rebuilds automatically on the next run, so you never need to repair it by hand.
 
 ---
 
@@ -458,7 +479,8 @@ It separately offers to remove `.venv`, usually the largest folder in the projec
 
 - Host the application so it is reachable online rather than locally
 - Upload of source documents — PDF HOA declarations, leases, inspection reports — with AI-assisted document Q&A; the current form accepts pasted text notes
-- Live public-data retrieval for market rents, property taxes, and zoning via paid APIs
+- ZIP-level **rent** data to match the Redfin sale coverage — HUD's free Small Area Fair Market Rents API is the obvious next source, since Redfin publishes no rents
+- Live public-data retrieval for property taxes and zoning via paid APIs
 - Scenario comparison across best/base/worst cases with sensitivity analysis
 - Multi-property comparison to rank candidates side by side
 

@@ -428,6 +428,21 @@ select:focus {
   margin-bottom: 16px;
 }
 
+/* Recorded-sales block inside the Market Snapshot. Separated from the sample
+   market text above it because these figures are real transactions, not
+   estimates, and the report should not blur the two together. */
+.redfin-title {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.redfin-gap {
+  margin: 0 0 4px;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
 .metric-card {
   min-height: 94px;
   padding: 14px;

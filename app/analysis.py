@@ -75,7 +75,37 @@ def build_risks(
             }
         )
 
+    premium = price_vs_market(metrics, market_context)
+    if premium is not None and premium >= 0.15:
+        median = market_context["redfin"]["median_sale_price"]
+        risks.append(
+            {
+                "level": "high" if premium >= 0.30 else "medium",
+                "title": "Above-Market Purchase Price",
+                "detail": (
+                    f"The purchase price is {premium:.0%} above the ${median:,.0f} median "
+                    f"sale price recorded in this ZIP. A premium can be justified by "
+                    f"condition, size, or location, but it should be a deliberate choice."
+                ),
+            }
+        )
+
     return risks
+
+
+def price_vs_market(
+    metrics: dict[str, Any],
+    market_context: dict[str, Any],
+) -> float | None:
+    """How far the purchase price sits above (+) or below (-) the ZIP median.
+
+    Returns None when no Redfin record covers the ZIP, which is the honest
+    answer - the app should not guess at a local median it does not have.
+    """
+    median = (market_context.get("redfin") or {}).get("median_sale_price")
+    if not median:
+        return None
+    return metrics["purchase_price"] / median - 1
 
 
 def build_opportunities(metrics: dict[str, Any], market_context: dict[str, Any]) -> list[dict[str, str]]:
@@ -114,6 +144,20 @@ def build_opportunities(metrics: dict[str, Any], market_context: dict[str, Any])
             {
                 "title": "Demand Driver",
                 "detail": market_context["demand_driver"],
+            }
+        )
+
+    premium = price_vs_market(metrics, market_context)
+    if premium is not None and premium <= -0.10:
+        median = market_context["redfin"]["median_sale_price"]
+        opportunities.append(
+            {
+                "title": "Below-Market Purchase Price",
+                "detail": (
+                    f"The purchase price is {abs(premium):.0%} below the ${median:,.0f} median "
+                    f"sale price in this ZIP. Confirm the discount reflects a real bargain "
+                    f"rather than deferred maintenance or a problem with the property."
+                ),
             }
         )
 

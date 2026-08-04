@@ -423,8 +423,12 @@ def build() -> Path:
     _bullets(
         frame,
         [
+            # The honest gap: policy is researched live, rent is still a bundled
+            # sample. Naming it beats being asked about the "low confidence" tag
+            # a grader can already see on the Market Snapshot.
+            "Rent and comps from a property-data API — today's market figures "
+            "are a state-level sample, and the report says so.",
             "OCR so scanned HOA declarations parse themselves.",
-            "Comparison view across several candidate properties.",
             "Scheduled re-research so notes refresh before they age out.",
         ],
         size=13.5,
@@ -436,6 +440,10 @@ def build() -> Path:
     _notes(
         slide,
         "[4:45-5:00] Close on the lesson, not a summary.\n"
+        "If asked what you would build next, or about data sources, lead with the API item: "
+        "policy is researched live, but rent and comps are still a bundled state-level "
+        "sample, and the report labels that low confidence rather than hiding it. Owning "
+        "that gap is stronger than being caught by it.\n"
         "The biggest shift: we spent our time writing standards - what counts as a verified "
         "fact, when to say 'unverified' - rather than wiring steps together. The agent handled "
         "the how, including recovering when a government site blocked it. That is a different "
